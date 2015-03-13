@@ -15,6 +15,7 @@
 
 package org.wso2.carbon.event.input.adapter.core.internal;
 
+import com.hazelcast.core.ILock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapter;
@@ -23,6 +24,7 @@ import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
 import org.wso2.carbon.event.input.adapter.core.exception.ConnectionUnavailableException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterRuntimeException;
+import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterServiceValueHolder;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,7 +41,7 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
     private DecayTimer timer = new DecayTimer();
     private volatile long nextConnectionTime;
     private ExecutorService executorService;
-
+    private ILock lock;
 
     public InputAdapterRuntime(InputEventAdapter inputEventAdapter, String name,
                                InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException {
@@ -49,6 +51,16 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
         executorService = Executors.newSingleThreadExecutor();
         synchronized (this) {
             inputEventAdapter.init(this);
+        }
+    }
+
+    public void setLock(ILock lock) {
+        this.lock = lock;
+    }
+
+    public void tryStart() {
+        if(lock == null || lock.tryLock()) {
+            start();
         }
     }
 

@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * EventAdapter service implementation.
@@ -41,11 +43,12 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
 
     private Map<String, InputEventAdapterFactory> eventAdapterFactoryMap;
     private ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> tenantSpecificEventAdapters;
-
+    private ScheduledExecutorService scheduledExecutorService;
 
     public CarbonInputEventAdapterService() {
         this.eventAdapterFactoryMap = new ConcurrentHashMap<String, InputEventAdapterFactory>();
         this.tenantSpecificEventAdapters = new ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>>();
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor =
     }
 
     public void registerEventAdapterFactory(InputEventAdapterFactory inputEventAdapterFactory) {
@@ -111,9 +114,8 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
         } else if(InputEventAdapterServiceValueHolder.getHazelcastInstance() != null) {
             String name = InputAdapterRuntime.class.getName() + ":" + tenantId
                     + ":" + inputAdapterRuntime.getName();
-            if (InputEventAdapterServiceValueHolder.getHazelcastInstance().getLock(name).tryLock()) {
-                inputAdapterRuntime.start();
-            }
+            inputAdapterRuntime.setLock(InputEventAdapterServiceValueHolder.getHazelcastInstance().getLock(name));
+            inputAdapterRuntime.tryStart();
         }
     }
 
@@ -172,6 +174,10 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     }
 
     public void tryStartInputEventAdapters() {
+
+    }
+
+    public void tryStartInputEventAdapters() {
         log.info("Trying to start the adapters");
         HazelcastInstance hazelcastInstance = InputEventAdapterServiceValueHolder.getHazelcastInstance();
 
@@ -187,11 +193,7 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
                     PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
                     for (InputAdapterRuntime inputAdapterRuntime : map.values()) {
                         if (!inputAdapterRuntime.isParallel()) {
-                            String name = InputAdapterRuntime.class.getName() + ":" + tenantId
-                                    + ":" + inputAdapterRuntime.getName();
-                            if (hazelcastInstance.getLock(name).tryLock()) {
-                                inputAdapterRuntime.start();
-                            }
+                            inputAdapterRuntime.tryStart();
                         }
                     }
                 } catch (Exception e) {
