@@ -84,6 +84,11 @@ public final class SOAPEventAdapter implements InputEventAdapter {
     }
 
     @Override
+    public boolean isParallel() {
+        return true;
+    }
+
+    @Override
     public void destroy() {
     }
 

@@ -49,16 +49,19 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
         executorService = Executors.newSingleThreadExecutor();
         synchronized (this) {
             inputEventAdapter.init(this);
-            try {
-                inputEventAdapter.connect();
-                connected = true;
-            } catch (ConnectionUnavailableException e) {
-                connectionUnavailable(e);
-            } catch (InputEventAdapterRuntimeException e) {
-                connected = false;
-                inputEventAdapter.disconnect();
-                log.error("Error initializing " + this.name + ", hence this will be suspended indefinitely", e);
-            }
+        }
+    }
+
+    public void start() {
+        try {
+            inputEventAdapter.connect();
+            connected = true;
+        } catch (ConnectionUnavailableException e) {
+            connectionUnavailable(e);
+        } catch (InputEventAdapterRuntimeException e) {
+            connected = false;
+            inputEventAdapter.disconnect();
+            log.error("Error initializing " + this.name + ", hence this will be suspended indefinitely", e);
         }
     }
 
@@ -123,5 +126,13 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
             log.error("Error in connecting at " + this.name + ", hence this will be suspended indefinitely", e);
         }
 
+    }
+
+    public boolean isParallel() {
+        return inputEventAdapter.isParallel();
+    }
+
+    public String getName() {
+        return name;
     }
 }

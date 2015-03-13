@@ -14,6 +14,10 @@
  */
 package org.wso2.carbon.event.input.adapter.core.internal.ds;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
@@ -37,6 +41,9 @@ import java.util.List;
  * @scr.reference name="input.event.adapter.tracker.service"
  * interface="org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory" cardinality="0..n"
  * policy="dynamic" bind="setEventAdapterType" unbind="unSetEventAdapterType"
+ * @scr.reference name="hazelcast.instance.service"
+ * interface="com.hazelcast.core.HazelcastInstance" cardinality="0..1"
+ * policy="dynamic" bind="setHazelcastInstance" unbind="unsetHazelcastInstance"
  * @scr.reference name="config.context.service"
  * interface="org.wso2.carbon.utils.ConfigurationContextService" cardinality="0..1" policy="dynamic"
  * bind="setConfigurationContextService" unbind="unsetConfigurationContextService"
@@ -129,6 +136,40 @@ public class InputEventAdapterServiceDS {
             log.error("Error in loading " + EventAdapterConstants.GLOBAL_CONFIG_FILE_NAME + " from " + path + ", hence Input Event Adapters will be running with default global configs.");
         }
         return new AdapterConfigs();
+    }
+
+    protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        InputEventAdapterServiceValueHolder.registerHazelcastInstance(hazelcastInstance);
+
+        CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
+        if (carbonInputEventAdapterService != null) {
+            carbonInputEventAdapterService.tryStartInputEventAdapters();
+        }
+
+        hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent membershipEvent) {
+
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
+                if (carbonInputEventAdapterService != null) {
+                    carbonInputEventAdapterService.tryStartInputEventAdapters();
+                }
+            }
+
+            @Override
+            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+
+            }
+
+        });
+    }
+
+    protected void unsetHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        InputEventAdapterServiceValueHolder.registerHazelcastInstance(null);
     }
 }
 

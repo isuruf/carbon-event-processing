@@ -73,6 +73,11 @@ public final class HTTPEventAdapter implements InputEventAdapter {
     }
 
     @Override
+    public boolean isParallel() {
+        return false;
+    }
+
+    @Override
     public void destroy() {
     }
 

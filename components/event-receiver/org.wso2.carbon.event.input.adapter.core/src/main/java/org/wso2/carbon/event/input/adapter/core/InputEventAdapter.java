@@ -31,6 +31,8 @@ public interface InputEventAdapter {
 
     void disconnect();
 
+    boolean isParallel();
+
     void destroy();
 
 }

@@ -14,6 +14,7 @@
  */
 package org.wso2.carbon.event.input.adapter.core.internal;
 
+import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -101,9 +102,19 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
         }
         Map<String, String> globalProperties = InputEventAdapterServiceValueHolder.getGlobalAdapterConfigs().
                 getAdapterConfig(inputEventAdapterConfiguration.getType()).getGlobalPropertiesAsMap();
-        eventAdapters.put(inputEventAdapterConfiguration.getName(), new InputAdapterRuntime(adapterFactory.
+        InputAdapterRuntime inputAdapterRuntime = new InputAdapterRuntime(adapterFactory.
                 createEventAdapter(inputEventAdapterConfiguration, globalProperties), inputEventAdapterConfiguration.getName(),
-                inputEventAdapterSubscription));
+                inputEventAdapterSubscription);
+        eventAdapters.put(inputEventAdapterConfiguration.getName(), inputAdapterRuntime);
+        if (inputAdapterRuntime.isParallel()) {
+            inputAdapterRuntime.start();
+        } else if(InputEventAdapterServiceValueHolder.getHazelcastInstance() != null) {
+            String name = InputAdapterRuntime.class.getName() + ":" + tenantId
+                    + ":" + inputAdapterRuntime.getName();
+            if (InputEventAdapterServiceValueHolder.getHazelcastInstance().getLock(name).tryLock()) {
+                inputAdapterRuntime.start();
+            }
+        }
     }
 
     /**
@@ -160,4 +171,35 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
         }
     }
 
+    public void tryStartInputEventAdapters() {
+        log.info("Trying to start the adapters");
+        HazelcastInstance hazelcastInstance = InputEventAdapterServiceValueHolder.getHazelcastInstance();
+
+        if (hazelcastInstance != null) {
+            Map<String, InputAdapterRuntime> map;
+            int tenantId;
+            for (Map.Entry<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> pair : tenantSpecificEventAdapters.entrySet()) {
+                map = pair.getValue();
+                tenantId = pair.getKey();
+                try {
+                    PrivilegedCarbonContext.startTenantFlow();
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
+                    for (InputAdapterRuntime inputAdapterRuntime : map.values()) {
+                        if (!inputAdapterRuntime.isParallel()) {
+                            String name = InputAdapterRuntime.class.getName() + ":" + tenantId
+                                    + ":" + inputAdapterRuntime.getName();
+                            if (hazelcastInstance.getLock(name).tryLock()) {
+                                inputAdapterRuntime.start();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Unable to start event adpaters for tenant :" + tenantId, e);
+                } finally {
+                    PrivilegedCarbonContext.endTenantFlow();
+                }
+            }
+        }
+    }
 }
