@@ -58,16 +58,19 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
         this.lock = lock;
     }
 
-    public void tryStart() {
+    public boolean tryStart() {
         if(lock == null || lock.tryLock()) {
             start();
         }
+        return connected;
     }
 
     public void start() {
         try {
-            inputEventAdapter.connect();
-            connected = true;
+            if (!connected) {
+                inputEventAdapter.connect();
+                connected = true;
+            }
         } catch (ConnectionUnavailableException e) {
             connectionUnavailable(e);
         } catch (InputEventAdapterRuntimeException e) {

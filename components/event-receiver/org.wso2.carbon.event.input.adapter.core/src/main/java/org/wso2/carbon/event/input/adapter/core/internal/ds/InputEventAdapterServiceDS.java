@@ -14,10 +14,7 @@
  */
 package org.wso2.carbon.event.input.adapter.core.internal.ds;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
@@ -140,10 +137,9 @@ public class InputEventAdapterServiceDS {
 
     protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         InputEventAdapterServiceValueHolder.registerHazelcastInstance(hazelcastInstance);
-
         CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
         if (carbonInputEventAdapterService != null) {
-            carbonInputEventAdapterService.tryStartInputEventAdapters();
+            carbonInputEventAdapterService.tryBecomeCoordinator(null);
         }
 
         hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
@@ -156,7 +152,7 @@ public class InputEventAdapterServiceDS {
             public void memberRemoved(MembershipEvent membershipEvent) {
                 CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
                 if (carbonInputEventAdapterService != null) {
-                    carbonInputEventAdapterService.tryStartInputEventAdapters();
+                    carbonInputEventAdapterService.tryBecomeCoordinator(membershipEvent.getMember().getUuid());
                 }
             }
 

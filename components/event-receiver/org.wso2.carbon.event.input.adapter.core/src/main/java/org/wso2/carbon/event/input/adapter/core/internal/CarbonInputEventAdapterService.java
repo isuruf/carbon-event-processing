@@ -15,6 +15,8 @@
 package org.wso2.carbon.event.input.adapter.core.internal;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -28,9 +30,7 @@ import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterSer
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * EventAdapter service implementation.
@@ -40,6 +40,7 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     private static Log log = LogFactory.getLog(CarbonInputEventAdapterService.class);
     private static final String EVENT_TRACE_LOGGER = "EVENT_TRACE_LOGGER";
     private Logger trace = Logger.getLogger(EVENT_TRACE_LOGGER);
+    private static final String HA_PREFIX = "org.wso2.cep.org.wso2.carbon.event.processor.management.ha";
 
     private Map<String, InputEventAdapterFactory> eventAdapterFactoryMap;
     private ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> tenantSpecificEventAdapters;
@@ -48,7 +49,7 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     public CarbonInputEventAdapterService() {
         this.eventAdapterFactoryMap = new ConcurrentHashMap<String, InputEventAdapterFactory>();
         this.tenantSpecificEventAdapters = new ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>>();
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor =
+        this.scheduledExecutorService = Executors.newScheduledThreadPool(1);
     }
 
     public void registerEventAdapterFactory(InputEventAdapterFactory inputEventAdapterFactory) {
@@ -111,11 +112,11 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
         eventAdapters.put(inputEventAdapterConfiguration.getName(), inputAdapterRuntime);
         if (inputAdapterRuntime.isParallel()) {
             inputAdapterRuntime.start();
-        } else if(InputEventAdapterServiceValueHolder.getHazelcastInstance() != null) {
-            String name = InputAdapterRuntime.class.getName() + ":" + tenantId
-                    + ":" + inputAdapterRuntime.getName();
-            inputAdapterRuntime.setLock(InputEventAdapterServiceValueHolder.getHazelcastInstance().getLock(name));
-            inputAdapterRuntime.tryStart();
+        } else if (InputEventAdapterServiceValueHolder.getHazelcastInstance() != null) {
+            HazelcastInstance hazelcastInstance = InputEventAdapterServiceValueHolder.getHazelcastInstance();
+            if (hazelcastInstance != null && hazelcastInstance.getLock("org.wso2.cep.org.wso2.carbon.event.processor.management.ha.test.member").tryLock()) {
+                inputAdapterRuntime.start();
+            }
         }
     }
 
@@ -173,33 +174,50 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
         }
     }
 
-    public void tryStartInputEventAdapters() {
-
+    public void startInputEventAdapters() {
+        Map<String, InputAdapterRuntime> map;
+        int tenantId;
+        for (Map.Entry<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> pair : tenantSpecificEventAdapters.entrySet()) {
+            map = pair.getValue();
+            tenantId = pair.getKey();
+            try {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
+                for (InputAdapterRuntime inputAdapterRuntime : map.values()) {
+                    if (!inputAdapterRuntime.isParallel()) {
+                        inputAdapterRuntime.start();
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Unable to start event adpaters for tenant :" + tenantId, e);
+            } finally {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
+        }
     }
 
-    public void tryStartInputEventAdapters() {
-        log.info("Trying to start the adapters");
+    public void tryBecomeCoordinator(final String member) {
         HazelcastInstance hazelcastInstance = InputEventAdapterServiceValueHolder.getHazelcastInstance();
-
         if (hazelcastInstance != null) {
-            Map<String, InputAdapterRuntime> map;
-            int tenantId;
-            for (Map.Entry<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> pair : tenantSpecificEventAdapters.entrySet()) {
-                map = pair.getValue();
-                tenantId = pair.getKey();
-                try {
-                    PrivilegedCarbonContext.startTenantFlow();
-                    PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
-                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
-                    for (InputAdapterRuntime inputAdapterRuntime : map.values()) {
-                        if (!inputAdapterRuntime.isParallel()) {
-                            inputAdapterRuntime.tryStart();
+            String localMember = hazelcastInstance.getCluster().getLocalMember().getUuid();
+            IMap<String, String> iMap = hazelcastInstance.getMap(HA_PREFIX+":MembershipMap");
+
+            if (iMap.tryLock("member") || iMap.get("member").equals(member)) {
+                iMap.put("member", localMember);
+                log.info("Starting Input Event Adapters");
+                startInputEventAdapters();
+            } else {
+                if (member != null && iMap.get("member").equals(member)) {
+                    scheduledExecutorService.schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            tryBecomeCoordinator(member);
                         }
-                    }
-                } catch (Exception e) {
-                    log.error("Unable to start event adpaters for tenant :" + tenantId, e);
-                } finally {
-                    PrivilegedCarbonContext.endTenantFlow();
+                    }, 1, TimeUnit.SECONDS);
+                    log.info("Waiting to get the lock");
+                } else {
+                    log.info("Other member has the lock");
                 }
             }
         }
