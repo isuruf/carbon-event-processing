@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-namespace java org.wso2.carbon.event.processor.core.internal.ha.thrift.service
+namespace java org.wso2.carbon.event.processor.management.internal.thrift.service
 
 include "Data.thrift"
 include "Exception.thrift"

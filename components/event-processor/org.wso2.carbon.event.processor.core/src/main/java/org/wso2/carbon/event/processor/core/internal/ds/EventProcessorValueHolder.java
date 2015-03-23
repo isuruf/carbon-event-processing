@@ -21,8 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import org.wso2.carbon.base.api.ServerConfigurationService;
 import org.wso2.carbon.databridge.core.definitionstore.AbstractStreamDefinitionStore;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
+import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
 import org.wso2.carbon.event.processor.core.internal.storm.manager.StormManagerServer;
+import org.wso2.carbon.event.processor.management.EventProcessingManagementService;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.ndatasource.core.DataSourceService;
@@ -34,6 +36,7 @@ import org.wso2.siddhi.core.SiddhiManager;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class EventProcessorValueHolder {
+    private static CarbonEventProcessorManagementService carbonEventProcessorManagementService;
     private static CarbonEventProcessorService eventProcessorService;
     private static EventStatisticsService eventStatisticsService;
     private static EventStreamService eventStreamService;
@@ -57,6 +60,14 @@ public class EventProcessorValueHolder {
     }
 
     private static SiddhiManager siddhiManager;
+
+    public static CarbonEventProcessorManagementService getEventProcessorManagementService() {
+        return carbonEventProcessorManagementService;
+    }
+
+    public static void registerEventProcessorManagementService(CarbonEventProcessorManagementService carbonEventProcessorManagementService) {
+        EventProcessorValueHolder.carbonEventProcessorManagementService = carbonEventProcessorManagementService;
+    }
 
     public static AbstractStreamDefinitionStore getStreamDefinitionStore() {
         return streamDefinitionStore;

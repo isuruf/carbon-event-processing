@@ -16,21 +16,29 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.core;
 
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+public interface EventProcessorManagementService {
+    /**
+     * Get the state of the event processor service
+     * @return state serialised as a byte array
+     */
+    public byte[] getState();
 
-import java.util.concurrent.locks.Lock;
+    /**
+     * Restore the state of the event processor service
+     * @param bytes state of an event processor service returned by a call to getState()
+     */
+    public void restoreState(byte[] bytes);
 
-public interface EventProcessingManagementService {
+    /**
+     * Try to pause the event processor service
+     * @param timeout to return
+     */
+    public void tryPause(long timeout);
 
-    public enum Mode {
-        SingleNode, HA, Distributed
-    }
-
-    public void registerHAListener(HAListener haListener);
-    public void unregisterHAListener(HAListener haListener);
-    public Lock getReadLock();
-    public CEPMembership getCurrentCEPMembershipInfo();
-    public EventProcessingManagementConfiguration getConfiguration();
+    /**
+     * Resume the event processor service
+     */
+    public void resume();
 }

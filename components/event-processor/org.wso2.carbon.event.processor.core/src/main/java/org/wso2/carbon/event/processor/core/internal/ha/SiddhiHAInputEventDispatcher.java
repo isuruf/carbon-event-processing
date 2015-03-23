@@ -26,26 +26,26 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
 
 public class SiddhiHAInputEventDispatcher extends SiddhiInputEventDispatcher {
 
     private final BlockingQueue<Object[]> eventQueue = new LinkedBlockingQueue<Object[]>();
-    private final ThreadBarrier threadBarrier;
-    private final AtomicLong blockedThreads;
+    private Lock readLock;
 
 
-    public SiddhiHAInputEventDispatcher(String streamId, InputHandler inputHandler, ExecutionPlanConfiguration executionPlanConfiguration, int tenantId, ExecutorService executorService, ThreadBarrier threadBarrier) {
+    public SiddhiHAInputEventDispatcher(String streamId, InputHandler inputHandler, ExecutionPlanConfiguration executionPlanConfiguration, int tenantId, ExecutorService executorService) {
         super(streamId, inputHandler, executionPlanConfiguration, tenantId);
-        this.threadBarrier = threadBarrier;
-        blockedThreads = threadBarrier.getBlockedThreads();
         executorService.execute(new SiddhiProcessInvoker());
-
     }
 
     public void sendEvent(Event event) throws InterruptedException {
         sendEvent(event.getData());
     }
 
+    public void setReadLock(Lock readLock) {
+        this.readLock = readLock;
+    }
 
     public void sendEvent(Object[] eventData) throws InterruptedException {
         eventQueue.put(eventData);
@@ -72,10 +72,9 @@ public class SiddhiHAInputEventDispatcher extends SiddhiInputEventDispatcher {
         public void run() {
             while (true) {
                 try {
-                    blockedThreads.incrementAndGet();
-                    threadBarrier.pass();
+                    readLock.lock();
                     Object[] eventData = eventQueue.take();
-                    blockedThreads.decrementAndGet();
+                    readLock.unlock();
                     inputHandler.send(eventData);
                 } catch (InterruptedException e) {
                     e.printStackTrace();

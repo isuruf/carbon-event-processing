@@ -16,21 +16,15 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.management.internal.util;
 
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+public class Constants {
 
-import java.util.concurrent.locks.Lock;
+    public static final String PREFIX = "org.wso2.cep.org.wso2.carbon.event.processor.management";
+    public static final String ROLE_MEMBERSHIP_MAP = PREFIX + "role_membership_map";
+    public static final String ACTIVEID = PREFIX + "Active";
+    public static final String PASSIVEID = PREFIX + "Passive";
+    public static final String MEMBERS = PREFIX + "members";
 
-public interface EventProcessingManagementService {
-
-    public enum Mode {
-        SingleNode, HA, Distributed
-    }
-
-    public void registerHAListener(HAListener haListener);
-    public void unregisterHAListener(HAListener haListener);
-    public Lock getReadLock();
-    public CEPMembership getCurrentCEPMembershipInfo();
-    public EventProcessingManagementConfiguration getConfiguration();
+    public static enum HAMode {Active, Passive, Backup};
 }

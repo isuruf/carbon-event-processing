@@ -16,21 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.management.config;
 
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.EventProcessingManagementService.Mode;
 
-import java.util.concurrent.locks.Lock;
-
-public interface EventProcessingManagementService {
-
-    public enum Mode {
-        SingleNode, HA, Distributed
-    }
-
-    public void registerHAListener(HAListener haListener);
-    public void unregisterHAListener(HAListener haListener);
-    public Lock getReadLock();
-    public CEPMembership getCurrentCEPMembershipInfo();
-    public EventProcessingManagementConfiguration getConfiguration();
+public interface EventProcessingManagementConfiguration {
+    public Mode getMode();
 }

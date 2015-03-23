@@ -33,7 +33,6 @@ import org.wso2.carbon.event.processor.core.exception.ExecutionPlanDependencyVal
 import org.wso2.carbon.event.processor.core.exception.ServiceDependencyValidationException;
 import org.wso2.carbon.event.processor.core.exception.StormDeploymentException;
 import org.wso2.carbon.event.processor.core.internal.ds.EventProcessorValueHolder;
-import org.wso2.carbon.event.processor.core.internal.ha.CEPMembership;
 import org.wso2.carbon.event.processor.core.internal.ha.HAManager;
 import org.wso2.carbon.event.processor.core.internal.ha.SiddhiHAInputEventDispatcher;
 import org.wso2.carbon.event.processor.core.internal.ha.SiddhiHAOutputStreamListener;
@@ -403,8 +402,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             AbstractSiddhiInputEventDispatcher eventDispatcher;
             if (haManager != null) {
                 eventDispatcher = new SiddhiHAInputEventDispatcher(importedStreamConfiguration.getStreamId(),
-                        inputHandler, executionPlanConfiguration, tenantId, haManager.getProcessThreadPoolExecutor(),
-                        haManager.getThreadBarrier());
+                        inputHandler, executionPlanConfiguration, tenantId, haManager.getProcessThreadPoolExecutor());
                 haManager.addInputEventDispatcher(importedStreamConfiguration.getStreamId(),
                         (SiddhiHAInputEventDispatcher) eventDispatcher);
             } else if (distributed && stormDeploymentConfig != null && stormDeploymentConfig.isReceiverNode()) {
@@ -749,7 +747,6 @@ public class CarbonEventProcessorService implements EventProcessorService {
                         File(executionPlanConfigurationFile.getFileName()).getName());
             }
         }
-
     }
 
     public void deactivateActiveExecutionPlanConfigurations(String streamId, int tenantId) {
@@ -865,6 +862,10 @@ public class CarbonEventProcessorService implements EventProcessorService {
             }
         }
         return false;
+    }
+
+    public Map<Integer, TreeMap<String, ExecutionPlan>> getTenantSpecificExecutionPlans() {
+        return tenantSpecificExecutionPlans;
     }
 
     public void addCurrentCEPMembership(CEPMembership cepMembership) {

@@ -16,7 +16,7 @@
 * under the License.
 */
 
-namespace java org.wso2.carbon.event.processor.core.internal.ha.thrift.data
+namespace java org.wso2.carbon.event.processor.management.internal.thrift.data
 
 
 struct CEPMembership{

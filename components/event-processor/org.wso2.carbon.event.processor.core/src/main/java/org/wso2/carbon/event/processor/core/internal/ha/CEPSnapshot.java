@@ -16,21 +16,15 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.core.internal.ha;
 
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+import java.io.Serializable;
+import java.util.HashMap;
 
-import java.util.concurrent.locks.Lock;
+public class CEPSnapshot implements Serializable {
+    HashMap<Integer, HashMap<String, SnapshotData>> snapshotdata;
 
-public interface EventProcessingManagementService {
+    public void init(){
 
-    public enum Mode {
-        SingleNode, HA, Distributed
     }
-
-    public void registerHAListener(HAListener haListener);
-    public void unregisterHAListener(HAListener haListener);
-    public Lock getReadLock();
-    public CEPMembership getCurrentCEPMembershipInfo();
-    public EventProcessingManagementConfiguration getConfiguration();
 }
