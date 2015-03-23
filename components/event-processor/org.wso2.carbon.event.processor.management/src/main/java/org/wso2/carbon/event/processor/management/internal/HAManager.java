@@ -20,7 +20,7 @@ package org.wso2.carbon.event.processor.management.internal;
 import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.event.processor.management.CEPMembership;
+import org.wso2.carbon.event.processor.core.CEPMembership;
 import org.wso2.carbon.event.processor.management.HAListener;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
@@ -128,7 +128,7 @@ public class HAManager {
         }
 
         CEPMembership cepMembership = roleToMembershipMap.get(activeId);
-        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagementService();
+        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagement();
         for (HAListener haListener: carbonEventProcessingManagementService.haListeners) {
             haListener.becomePassive(cepMembership, members.keySet());
         }
@@ -136,7 +136,7 @@ public class HAManager {
     }
 
     private void becomeActive() {
-        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagementService();
+        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagement();
         for (HAListener haListener: carbonEventProcessingManagementService.haListeners) {
             haListener.becomeActive(members.keySet());
         }

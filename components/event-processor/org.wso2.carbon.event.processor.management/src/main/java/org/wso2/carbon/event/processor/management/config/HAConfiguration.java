@@ -17,16 +17,15 @@
 */
 package org.wso2.carbon.event.processor.management.config;
 
-import org.wso2.carbon.event.processor.management.CEPMembership;
-import org.wso2.carbon.event.processor.management.EventProcessingManagementService.Mode;
+import org.wso2.carbon.event.processor.core.CEPMembership;
+import org.wso2.carbon.event.processor.management.EventProcessingManagement.Mode;
 
 public class HAConfiguration implements EventProcessingManagementConfiguration {
-    private CEPMembership cepMembership;
+    private CEPMembership management;
+    private CEPMembership transport;
     private int reconnectionInterval;
 
-    public HAConfiguration(String host, int port, int reconnectionInterval) {
-        cepMembership = new CEPMembership(host, port);
-        this.reconnectionInterval = reconnectionInterval;
+    public HAConfiguration() {
     }
 
     public int getReconnectionInterval() {
@@ -37,13 +36,22 @@ public class HAConfiguration implements EventProcessingManagementConfiguration {
         this.reconnectionInterval = reconnectionInterval;
     }
 
-    public CEPMembership getCEPMembership() {
-        return cepMembership;
+    public CEPMembership getManagement() {
+        return management;
     }
 
-    public void setCepMembership(CEPMembership cepMembership) {
-        this.cepMembership = cepMembership;
+    public CEPMembership getTransport() {
+        return transport;
     }
+
+    public void setManagement(String host, int port) {
+        this.management = new CEPMembership(host, port);
+    }
+
+    public void setTransport(String host, int port, int reconnectionInterval) {
+        this.transport = new CEPMembership(host, port);
+    }
+
 
     @Override
     public Mode getMode() {

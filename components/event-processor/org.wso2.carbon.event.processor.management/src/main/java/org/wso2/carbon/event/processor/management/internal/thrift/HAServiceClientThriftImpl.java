@@ -29,7 +29,7 @@ import org.wso2.carbon.event.processor.core.internal.ha.SnapshotData;
 import org.wso2.carbon.event.processor.management.internal.thrift.exception.InternalServerException;
 import org.wso2.carbon.event.processor.management.internal.thrift.exception.NotAnActiveMemberException;
 import org.wso2.carbon.event.processor.management.internal.thrift.service.HAManagementService;
-import org.wso2.carbon.event.processor.management.CEPMembership;
+import org.wso2.carbon.event.processor.core.CEPMembership;
 
 public class HAServiceClientThriftImpl implements HAServiceClient {
 

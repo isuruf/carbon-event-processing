@@ -39,9 +39,11 @@ public final class ConfigurationConstants {
 
     public static final String PROCESSING_MODE_HA = "ha";
     public static final String HA_TRANSPORT_ELEMENT = "transport";
+    public static final String HA_MANAGEMENT_ELEMENT = "management";
     public static final String HA_RECONNECTION_INTERVAL_ELEMENT = "reconnectionInterval";
-    public static final int HA_DEFAULT_RECEIVER_PORT = 11224;
+    public static final int HA_DEFAULT_TRANSPORT_PORT = 11224;
     public static final int HA_DEFAULT_RECONNECTION_INTERVAL = 20000;
+    public static final int HA_DEFAULT_MANAGEMENT_PORT = 11324;
 
     public static final String PROCESSING_MODE_SN = "SingleNode";
     public static final String SN_PERSISTENCE_ELEMENT = "persistence";

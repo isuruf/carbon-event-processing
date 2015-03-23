@@ -24,9 +24,10 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
+import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
 import org.wso2.carbon.event.processor.management.internal.thrift.service.HAManagementService;
-import org.wso2.carbon.event.processor.management.CEPMembership;
-import org.wso2.carbon.event.processor.management.EventProcessingManagementService.Mode;
+import org.wso2.carbon.event.processor.core.CEPMembership;
+import org.wso2.carbon.event.processor.management.EventProcessingManagement.Mode;
 import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 
@@ -40,8 +41,8 @@ public class HAManagementServer {
         try {
             if (config.getMode() == Mode.HA) {
                 HAConfiguration haConfiguration = (HAConfiguration) config;
-                carbonEventProcessorService.addCurrentCEPMembership(haConfiguration.getCEPMembership());
-                start(haConfiguration.getCEPMembership(), carbonEventProcessorService);
+                carbonEventProcessorService.addCurrentCEPMembership(haConfiguration.getManagement());
+                start(haConfiguration.getManagement(), carbonEventProcessorService);
             }
         } catch (RuntimeException e) {
             log.error("Error in starting Agent Server ", e);

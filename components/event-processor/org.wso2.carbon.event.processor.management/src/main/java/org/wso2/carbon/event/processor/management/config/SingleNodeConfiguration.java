@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.event.processor.management.config;
 
-import org.wso2.carbon.event.processor.management.EventProcessingManagementService.Mode;
+import org.wso2.carbon.event.processor.management.EventProcessingManagement.Mode;
 
 public class SingleNodeConfiguration implements EventProcessingManagementConfiguration {
 

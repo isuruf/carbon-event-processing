@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.core;
 
 import java.io.Serializable;
 

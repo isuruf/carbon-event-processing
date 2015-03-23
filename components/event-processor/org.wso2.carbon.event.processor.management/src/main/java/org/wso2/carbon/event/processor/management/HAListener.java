@@ -18,8 +18,9 @@
 
 package org.wso2.carbon.event.processor.management;
 
+import org.wso2.carbon.event.processor.core.CEPMembership;
+
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 
 public interface HAListener {
     public void becomePassive(CEPMembership activeMember, Set<CEPMembership> members);

@@ -22,7 +22,7 @@ import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.databridge.core.exception.DataBridgeConfigurationException;
-import org.wso2.carbon.event.processor.management.internal.server.HAConfiguration;
+import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ServerConstants;
 

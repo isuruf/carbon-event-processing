@@ -329,8 +329,8 @@ public class CarbonEventProcessorService implements EventProcessorService {
 
         HAManager haManager = null;
         if (isDistributedProcessingEnabledString != null && isDistributedProcessingEnabledString.equalsIgnoreCase("RedundantNode")) {
-            haManager = new HAManager(EventProcessorValueHolder.getHazelcastInstance(),
-                    executionPlanConfiguration.getName(), tenantId, executionPlanRuntime, inputHandlerMap.size(),
+            haManager = new HAManager(executionPlanConfiguration.getName(), tenantId,
+                    executionPlanRuntime, inputHandlerMap.size(),
                     currentCepMembershipInfo);
         }
 
@@ -419,7 +419,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             } else {
                 eventDispatcher = new SiddhiInputEventDispatcher(importedStreamConfiguration.getStreamId(),
                         inputHandler, executionPlanConfiguration, tenantId);
-            }
+             }
 
             try {
                 EventProcessorValueHolder.getEventStreamService().subscribe(eventDispatcher);

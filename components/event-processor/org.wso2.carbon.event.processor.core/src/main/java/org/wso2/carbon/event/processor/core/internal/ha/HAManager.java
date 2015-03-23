@@ -20,9 +20,9 @@ package org.wso2.carbon.event.processor.core.internal.ha;
 import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.event.processor.core.CEPMembership;
 import org.wso2.carbon.event.processor.core.internal.ds.EventProcessorValueHolder;
 import org.wso2.carbon.event.processor.core.internal.util.ByteSerializer;
-import org.wso2.carbon.event.processor.management.CEPMembership;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 
 import java.util.*;
@@ -45,7 +45,7 @@ public class HAManager {
     private ThreadPoolExecutor processThreadPoolExecutor;
 
 
-    public HAManager(HazelcastInstance hazelcastInstance, String executionPlanName, int tenantId, ExecutionPlanRuntime executionPlanRuntime, int inputProcessors, CEPMembership currentCepMembershipInfo) {
+    public HAManager(String executionPlanName, int tenantId, ExecutionPlanRuntime executionPlanRuntime, int inputProcessors, CEPMembership currentCepMembershipInfo) {
         this.executionPlanName = executionPlanName;
         this.tenantId = tenantId;
         this.executionPlanRuntime = executionPlanRuntime;

@@ -16,9 +16,9 @@
 <eventProcessingConfig>
 
     <processing mode="SingleNode">
-        <persistnace class="">
+        <persistence class="">
             <property key="">value</property>
-        </persistnace>
+        </persistence>
     </processing>
 
     <processing mode="HA">
@@ -28,6 +28,10 @@
             <port>11224</port>
             <reconnectionInterval>20000</reconnectionInterval>
         </transport>
+        <management>
+            <!--<hostName>localhost</hostName>-->
+            <port>10000</port>
+        </management>
     </processing>
 
     <processing mode="Distributed" class="">

@@ -17,7 +17,8 @@
 */
 package org.wso2.carbon.event.processor.core.internal.ha;
 
-import org.wso2.carbon.event.processor.management.CEPMembership;
+
+import org.wso2.carbon.event.processor.core.CEPMembership;
 
 public interface HAServiceClient {
 

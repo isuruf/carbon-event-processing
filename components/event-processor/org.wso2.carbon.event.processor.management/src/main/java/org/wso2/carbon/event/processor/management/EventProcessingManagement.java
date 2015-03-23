@@ -16,49 +16,39 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal;
+package org.wso2.carbon.event.processor.management;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.log4j.Logger;
-import org.wso2.carbon.event.processor.management.CEPMembership;
-import org.wso2.carbon.event.processor.management.EventProcessingManagementService;
-import org.wso2.carbon.event.processor.management.HAListener;
+import org.wso2.carbon.event.processor.core.CEPMembership;
 import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
+import org.wso2.carbon.event.processor.management.internal.HAManager;
 import org.wso2.carbon.event.processor.management.internal.config.ManagementConfigurationBuilder;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class CarbonEventProcessingManagementService implements EventProcessingManagementService {
+public class EventProcessingManagement {
 
-    private static Logger log = Logger.getLogger(CarbonEventProcessingManagementService.class);
+    public enum Mode {
+        SingleNode, HA, Distributed
+    }
 
-    public List<HAListener> haListeners = new ArrayList<HAListener>();
+    private static Logger log = Logger.getLogger(EventProcessingManagement.class);
+
     public ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private Mode mode = Mode.SingleNode;
     private HAManager haManager = null;
     private EventProcessingManagementConfiguration eventProcessingManagementConfiguration;
 
-    public CarbonEventProcessingManagementService() {
+    public EventProcessingManagement() {
         eventProcessingManagementConfiguration = ManagementConfigurationBuilder.getConfiguration();
         if (eventProcessingManagementConfiguration != null) {
-           mode = eventProcessingManagementConfiguration.getMode();
+            mode = eventProcessingManagementConfiguration.getMode();
         }
-    }
-
-    @Override
-    public void registerHAListener(HAListener haListener) {
-        haListeners.add(haListener);
-    }
-
-    @Override
-    public void unregisterHAListener(HAListener haListener) {
-        haListeners.remove(haListener);
     }
 
     public void init(HazelcastInstance hazelcastInstance) {
@@ -77,17 +67,14 @@ public class CarbonEventProcessingManagementService implements EventProcessingMa
         }
     }
 
-    @Override
     public Lock getReadLock() {
         return readWriteLock.readLock();
     }
 
-    @Override
     public CEPMembership getCurrentCEPMembershipInfo() {
         return EventProcessingManagementValueHolder.getCurrentCEPMembershipInfo();
     }
 
-    @Override
     public EventProcessingManagementConfiguration getConfiguration() {
         return eventProcessingManagementConfiguration;
     }

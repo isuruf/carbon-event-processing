@@ -121,10 +121,19 @@ public class ManagementConfigurationBuilder {
     }
 
     private static HAConfiguration haConfig(OMElement processing) {
+        HAConfiguration haConfiguration = new HAConfiguration();
         OMElement transport = processing.getFirstChildWithName(
                 new QName(ConfigurationConstants.HA_TRANSPORT_ELEMENT));
-        return new HAConfiguration(readHostName(transport), readPort(transport),
+        haConfiguration.setTransport(readHostName(transport),
+                readPort(transport, ConfigurationConstants.HA_DEFAULT_TRANSPORT_PORT),
                 readReconnectionInterval(transport));
+
+        OMElement management = processing.getFirstChildWithName(
+                new QName(ConfigurationConstants.HA_MANAGEMENT_ELEMENT));
+        haConfiguration.setManagement(readHostName(management),
+                readPort(management, ConfigurationConstants.HA_DEFAULT_MANAGEMENT_PORT));
+
+        return haConfiguration;
     }
 
     private static String readHostName(OMElement transport) {
@@ -145,7 +154,7 @@ public class ManagementConfigurationBuilder {
         return hostName;
     }
 
-    private static int readPort(OMElement transport) {
+    private static int readPort(OMElement transport, int defaultPort) {
         OMElement receiverPort = transport.getFirstChildWithName(
                 new QName(ConfigurationConstants.PORT_ELEMENT));
         int portOffset = haReadPortOffset();
@@ -154,11 +163,11 @@ public class ManagementConfigurationBuilder {
             try {
                 return (Integer.parseInt(receiverPort.getText()) + portOffset);
             } catch (NumberFormatException e) {
-                port = ConfigurationConstants.HA_DEFAULT_RECEIVER_PORT + portOffset;
+                port = defaultPort + portOffset;
                 log.warn("Invalid port for HA configuration. Using default port " + port, e);
             }
         } else {
-            port = ConfigurationConstants.HA_DEFAULT_RECEIVER_PORT + portOffset;
+            port = defaultPort + portOffset;
             log.warn("Missing port for HA configuration. Using default port" + port);
         }
         return port;
