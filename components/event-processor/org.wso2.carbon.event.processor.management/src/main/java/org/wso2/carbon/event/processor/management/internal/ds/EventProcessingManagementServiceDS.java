@@ -24,6 +24,7 @@ import com.hazelcast.core.MembershipListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.event.input.adapter.core.InputEventAdapterManagementService;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.management.internal.EventProcessingManager;
 
@@ -35,7 +36,12 @@ import org.wso2.carbon.event.processor.management.internal.EventProcessingManage
  * @scr.reference name="event.processormanagement.service"
  * interface="org.wso2.carbon.event.processor.core.EventProcessorManagementService" cardinality="1..1"
  * policy="dynamic" bind="setEventProcessorManagementService" unbind="unSetEventProcessorManagementService"
+ * @scr.reference name="event.inputeventadaptermanagement.service"
+ * interface="org.wso2.carbon.event.input.adapter.core.InputEventAdapterManagementService" cardinality="1..1"
+ * policy="dynamic" bind="setInputEventAdapterManagementService" unbind="unInputEventAdapterManagementService"
+
  */
+
 public class EventProcessingManagementServiceDS {
     private static final Log log = LogFactory.getLog(EventProcessingManagementServiceDS.class);
 
@@ -43,7 +49,7 @@ public class EventProcessingManagementServiceDS {
         try {
 
             EventProcessingManager eventProcessingManager = new EventProcessingManager();
-            EventProcessingManagementValueHolder.registerEventProcessingManagementService(eventProcessingManager);
+            EventProcessingManagementValueHolder.setEventProcessingManager(eventProcessingManager);
             //context.getBundleContext().registerService(EventProcessingManagement.class.getName(), eventProcessingManagement, null);
 
             if (log.isDebugEnabled()) {
@@ -93,5 +99,13 @@ public class EventProcessingManagementServiceDS {
 
     public void unSetEventProcessorManagementService(EventProcessorManagementService eventProcessorManagementService) {
         EventProcessingManagementValueHolder.registerEventProcessorManagementService(null);
+    }
+
+    public void setInputEventAdapterManagementService(InputEventAdapterManagementService inputEventAdapterManagementService) {
+        EventProcessingManagementValueHolder.registerInputEventAdapterManagementService(inputEventAdapterManagementService);
+    }
+
+    public void unSetInputEventAdapterManagementService(InputEventAdapterManagementService inputEventAdapterManagementService) {
+        EventProcessingManagementValueHolder.registerInputEventAdapterManagementService(null);
     }
 }

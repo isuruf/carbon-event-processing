@@ -66,7 +66,6 @@ public class CarbonEventProcessorService implements EventProcessorService {
     public enum Mode {
         SingleNode, HA, Distributed
     }
-
     private Mode mode;
 
     private List<String> importDefinitions;

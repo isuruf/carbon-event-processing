@@ -16,28 +16,22 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.input.adapter.core;
+package org.wso2.carbon.event.input.adapter.core.internal.management;
 
-public interface InputEventAdapterManagementService {
-    /**
-     * Get the state of the input event adapter service
-     * @return state serialised as a byte array
-     */
-    public byte[] getState();
+import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
 
-    /**
-     * Synchronize the state of the input event adapter service
-     * @param bytes state of an input event adapter service returned by a call to getState()
-     */
-    public void syncState(byte[] bytes);
+public abstract class AbstractInputEventDispatcher {
+    protected InputEventAdapterSubscription inputEventAdapterSubscription;
 
-    /**
-     * Pause the input event adapter service
-     */
-    public void pause();
+    public AbstractInputEventDispatcher(InputEventAdapterSubscription inputEventAdapterSubscription) {
+        this.inputEventAdapterSubscription = inputEventAdapterSubscription;
+    }
 
-    /**
-     * Resume the input event adapter service
-     */
-    public void resume();
+    public abstract void onEvent(Object object);
+
+    public abstract void shutdown();
+
+    public abstract byte[] getState();
+
+    public abstract void syncState(byte[] bytes);
 }

@@ -73,7 +73,7 @@ public final class HTTPEventAdapter implements InputEventAdapter {
     }
 
     @Override
-    public boolean isParallel() {
+    public boolean duplicateEvents() {
         return false;
     }
 

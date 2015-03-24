@@ -29,7 +29,6 @@ import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfigReader;
 import org.wso2.carbon.event.processor.core.EventProcessorService;
 import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
-import org.wso2.carbon.event.processor.management.internal.server.HAManagementServer;
 import org.wso2.carbon.event.processor.core.internal.listener.EventStreamListenerImpl;
 import org.wso2.carbon.event.processor.core.internal.persistence.FileSystemPersistenceStore;
 import org.wso2.carbon.event.processor.core.internal.storm.manager.StormManagerServer;
@@ -77,8 +76,6 @@ public class EventProcessorServiceDS {
 
             CarbonEventProcessorService carbonEventProcessorService = new CarbonEventProcessorService();
             EventProcessorValueHolder.registerEventProcessorService(carbonEventProcessorService);
-
-            HAManagementServer.start(carbonEventProcessorService);
 
             String stormConfigDirPath = CarbonUtils.getCarbonConfigDirPath();
             StormDeploymentConfig stormDeploymentConfig = StormDeploymentConfigReader.loadConfigurations(stormConfigDirPath);

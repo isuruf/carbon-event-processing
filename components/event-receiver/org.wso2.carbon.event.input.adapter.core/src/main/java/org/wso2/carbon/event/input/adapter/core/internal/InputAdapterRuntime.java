@@ -20,11 +20,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapter;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterListener;
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
 import org.wso2.carbon.event.input.adapter.core.exception.ConnectionUnavailableException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterRuntimeException;
-import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterServiceValueHolder;
+import org.wso2.carbon.event.input.adapter.core.internal.management.AbstractInputEventDispatcher;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,7 +35,7 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
     private static Log log = LogFactory.getLog(InputAdapterRuntime.class);
     private InputEventAdapter inputEventAdapter;
     private String name;
-    private InputEventAdapterSubscription inputEventAdapterSubscription;
+    private AbstractInputEventDispatcher abstractInputEventDispatcher;
     private volatile boolean connected = false;
     private DecayTimer timer = new DecayTimer();
     private volatile long nextConnectionTime;
@@ -44,10 +43,10 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
     private ILock lock;
 
     public InputAdapterRuntime(InputEventAdapter inputEventAdapter, String name,
-                               InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException {
+                               AbstractInputEventDispatcher abstractInputEventDispatcher) throws InputEventAdapterException {
         this.inputEventAdapter = inputEventAdapter;
         this.name = name;
-        this.inputEventAdapterSubscription = inputEventAdapterSubscription;
+        this.abstractInputEventDispatcher = abstractInputEventDispatcher;
         executorService = Executors.newSingleThreadExecutor();
         synchronized (this) {
             inputEventAdapter.init(this);
@@ -97,7 +96,7 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
      */
     @Override
     public void onEvent(Object object) {
-        inputEventAdapterSubscription.onEvent(object);
+        abstractInputEventDispatcher.onEvent(object);
     }
 
     @Override
@@ -143,11 +142,15 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
 
     }
 
-    public boolean isParallel() {
-        return inputEventAdapter.isParallel();
+    public boolean duplicateEvents() {
+        return inputEventAdapter.duplicateEvents();
     }
 
     public String getName() {
         return name;
+    }
+
+    public AbstractInputEventDispatcher getInputEventDispatcher() {
+        return abstractInputEventDispatcher;
     }
 }

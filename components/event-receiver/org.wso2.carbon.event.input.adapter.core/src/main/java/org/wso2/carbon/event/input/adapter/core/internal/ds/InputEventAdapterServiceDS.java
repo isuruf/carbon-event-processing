@@ -19,7 +19,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory;
+import org.wso2.carbon.event.input.adapter.core.InputEventAdapterManagementService;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterService;
+import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterManagementService;
 import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterService;
 import org.wso2.carbon.event.input.adapter.core.internal.EventAdapterConstants;
 import org.wso2.carbon.event.input.adapter.core.internal.config.AdapterConfigs;
@@ -38,9 +40,6 @@ import java.util.List;
  * @scr.reference name="input.event.adapter.tracker.service"
  * interface="org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory" cardinality="0..n"
  * policy="dynamic" bind="setEventAdapterType" unbind="unSetEventAdapterType"
- * @scr.reference name="hazelcast.instance.service"
- * interface="com.hazelcast.core.HazelcastInstance" cardinality="0..1"
- * policy="dynamic" bind="setHazelcastInstance" unbind="unsetHazelcastInstance"
  * @scr.reference name="config.context.service"
  * interface="org.wso2.carbon.utils.ConfigurationContextService" cardinality="0..1" policy="dynamic"
  * bind="setConfigurationContextService" unbind="unsetConfigurationContextService"
@@ -63,9 +62,13 @@ public class InputEventAdapterServiceDS {
         CarbonInputEventAdapterService inputEventAdapterService = new CarbonInputEventAdapterService();
         InputEventAdapterServiceValueHolder.setCarbonInputEventAdapterService(inputEventAdapterService);
 
+        CarbonInputEventAdapterManagementService inputEventAdapterManagementService = new CarbonInputEventAdapterManagementService();
+        InputEventAdapterServiceValueHolder.setCarbonInputEventAdapterManagementService(inputEventAdapterManagementService);
+
         registerInputEventAdapterFactories();
 
         context.getBundleContext().registerService(InputEventAdapterService.class.getName(), inputEventAdapterService, null);
+        context.getBundleContext().registerService(InputEventAdapterManagementService.class.getName(), inputEventAdapterManagementService, null);
 
         try {
             if (log.isDebugEnabled()) {
@@ -133,39 +136,6 @@ public class InputEventAdapterServiceDS {
             log.error("Error in loading " + EventAdapterConstants.GLOBAL_CONFIG_FILE_NAME + " from " + path + ", hence Input Event Adapters will be running with default global configs.");
         }
         return new AdapterConfigs();
-    }
-
-    protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        InputEventAdapterServiceValueHolder.registerHazelcastInstance(hazelcastInstance);
-        CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
-        if (carbonInputEventAdapterService != null) {
-            carbonInputEventAdapterService.tryBecomeCoordinator(null);
-        }
-
-        hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
-            @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-
-            }
-
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                CarbonInputEventAdapterService carbonInputEventAdapterService = InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService();
-                if (carbonInputEventAdapterService != null) {
-                    carbonInputEventAdapterService.tryBecomeCoordinator(membershipEvent.getMember().getUuid());
-                }
-            }
-
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
-            }
-
-        });
-    }
-
-    protected void unsetHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        InputEventAdapterServiceValueHolder.registerHazelcastInstance(null);
     }
 }
 

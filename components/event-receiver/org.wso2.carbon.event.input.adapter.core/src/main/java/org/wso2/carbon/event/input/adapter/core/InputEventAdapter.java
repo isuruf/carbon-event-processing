@@ -31,7 +31,7 @@ public interface InputEventAdapter {
 
     void disconnect();
 
-    boolean isParallel();
+    boolean duplicateEvents();
 
     void destroy();
 

@@ -23,6 +23,7 @@ import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.log4j.Logger;
 import org.wso2.carbon.databridge.core.exception.DataBridgeConfigurationException;
 import org.wso2.carbon.event.processor.common.util.Utils;
+import org.wso2.carbon.event.processor.core.exception.ExecutionPlanConfigurationException;
 import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.config.SingleNodeConfiguration;
@@ -39,7 +40,7 @@ import java.net.SocketException;
 public class ManagementConfigurationBuilder {
     private static Logger log = Logger.getLogger(ManagementConfigurationBuilder.class);
 
-    public static OMElement loadConfigXML() throws DataBridgeConfigurationException {
+    public static OMElement loadConfigXML() throws ExecutionPlanConfigurationException {
 
         String carbonHome = System.getProperty(ServerConstants.CARBON_CONFIG_DIR_PATH);
         String path = carbonHome + File.separator + ConfigurationConstants.CEP_MANAGEMENT_XML;
@@ -57,12 +58,12 @@ public class ManagementConfigurationBuilder {
             String errorMessage = ConfigurationConstants.CEP_MANAGEMENT_XML
                     + "cannot be found in the path : " + path;
             log.error(errorMessage, e);
-            throw new DataBridgeConfigurationException(errorMessage, e);
+            throw new ExecutionPlanConfigurationException(errorMessage, e);
         } catch (XMLStreamException e) {
             String errorMessage = "Invalid XML for " + ConfigurationConstants.CEP_MANAGEMENT_XML
                     + " located in the path : " + path;
             log.error(errorMessage, e);
-            throw new DataBridgeConfigurationException(errorMessage, e);
+            throw new ExecutionPlanConfigurationException(errorMessage, e);
         } finally {
             try {
                 if (inputStream != null) {
@@ -79,7 +80,7 @@ public class ManagementConfigurationBuilder {
         OMElement omElement;
         try {
             omElement = loadConfigXML();
-        } catch (DataBridgeConfigurationException e) {
+        } catch (ExecutionPlanConfigurationException e) {
             log.error(e);
             return null;
         }
