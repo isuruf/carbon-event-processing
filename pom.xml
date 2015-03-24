@@ -15,7 +15,8 @@
  ~ specific language governing permissions and limitations
  ~ under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
         <groupId>org.wso2</groupId>
@@ -37,7 +38,7 @@
         <module>components/event-publisher</module>
         <module>components/event-receiver</module>
         <module>components/event-processor</module>
-        <module>components/event-stream</module>
+        <module>components/event-simulator</module>
         <module>components/event-flow</module>
         <module>components/event-monitor</module>
         <module>components/application-deployer</module>
@@ -46,7 +47,7 @@
         <module>features/event-publisher</module>
         <module>features/event-receiver</module>
         <module>features/event-monitor</module>
-        <module>features/event-stream</module>
+        <module>features/event-simulator</module>
         <module>features/event-flow</module>
         <module>features/application-deployer</module>
     </modules>
@@ -190,35 +191,48 @@
             <!--carbon-commons dependencies start-->
             <dependency>
                 <groupId>org.wso2.carbon.commons</groupId>
-                <artifactId>org.wso2.carbon.databridge.core</artifactId>
-                <version>${carbon.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
-                <artifactId>org.wso2.carbon.databridge.agent.thrift</artifactId>
-                <version>${carbon.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
-                <artifactId>org.wso2.carbon.databridge.commons</artifactId>
-                <version>${carbon.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
-                <artifactId>org.wso2.carbon.databridge.commons.thrift</artifactId>
-                <version>${carbon.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
-                <artifactId>org.wso2.carbon.databridge.receiver.thrift</artifactId>
-                <version>${carbon.commons.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
                 <artifactId>org.wso2.carbon.tenant.common</artifactId>
                 <version>${carbon.commons.version}</version>
             </dependency>
             <!--carbon-commons dependencies stop-->
+
+            <!--analytics-common dependencies start-->
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.core</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.agent</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.commons</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.commons.thrift</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.receiver.thrift</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.commons.binary</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.receiver.binary</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <!--analytics-common dependencies stop-->
 
             <!--axis2.transport dependencies start-->
             <dependency>
@@ -306,7 +320,6 @@
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr.version}</version>
             </dependency>
-
             <!--third party dependencies stop-->
 
             <!--carbon event processing dependencies start-->
@@ -326,6 +339,18 @@
                 <artifactId>org.wso2.carbon.event.output.adapter.websocket.local</artifactId>
                 <groupId>org.wso2.carbon.event-processing</groupId>
                 <version>${carbon.event.processing.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <artifactId>org.wso2.carbon.event.input.adapter.websocket.local</artifactId>
+                <groupId>org.wso2.carbon.event-processing</groupId>
+                <version>${carbon.event.processing.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${apache.httpcore.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -628,14 +653,20 @@
             <!--siddhi dependencies stop-->
 
             <!--features start-->
-            <!--carbon commons features start-->
+            <!--carbon analytics common features start-->
             <dependency>
-                <groupId>org.wso2.carbon.commons</groupId>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
                 <artifactId>org.wso2.carbon.databridge.datareceiver.feature</artifactId>
-                <version>${carbon.commons.version}</version>
+                <version>${carbon.analytics-common.version}</version>
                 <type>zip</type>
             </dependency>
-            <!--carbon commons features end-->
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.databridge.datapublisher.feature</artifactId>
+                <version>${carbon.analytics-common.version}</version>
+                <type>zip</type>
+            </dependency>
+            <!--carbon analytics common features end-->
 
             <dependency>
                 <groupId>org.wso2.carbon.event-processing</groupId>
@@ -1175,6 +1206,11 @@
             </releases>
         </repository>
 
+        <repository>
+            <id>spring-milestones</id>
+            <url>http://repo.springsource.org/libs-milestone/</url>
+        </repository>
+
     </repositories>
 
     <properties>
@@ -1185,6 +1221,7 @@
         <orbit.version.json>2.0.0.wso2v1</orbit.version.json>
 
         <carbon.commons.version>4.3.4</carbon.commons.version>
+        <carbon.analytics-common.version>1.0.0-SNAPSHOT</carbon.analytics-common.version>
         <carbon.analytics.common.version>1.0.0-SNAPSHOT</carbon.analytics.common.version>
         <!--<carbon.commons.imp.pkg.version>[4.3.0, 4.4.0)</carbon.commons.imp.pkg.version>-->
 
@@ -1192,6 +1229,7 @@
         <siddhi.version>3.0.0-SNAPSHOT</siddhi.version>
         <carbon.event.processing.version>2.0.4-SNAPSHOT</carbon.event.processing.version>
         <storm.version>0.9.2-incubating.wso2v1</storm.version>
+        <apache.httpcore.version>4.2.4</apache.httpcore.version>
 
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <tomcat.websocket.version>7.0.54</tomcat.websocket.version>

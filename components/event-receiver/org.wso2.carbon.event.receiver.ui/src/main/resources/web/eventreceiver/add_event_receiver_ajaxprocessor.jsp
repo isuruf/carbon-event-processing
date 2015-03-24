@@ -63,7 +63,7 @@
 
             if (propertySet != null) {
                 String[] properties = propertySet.split("\\|=");
-                if (properties != null) {
+                if (properties != null && !propertySet.equals("")) {
                     // construct event receiver property array for each event receiver property
                     basicInputAdapterPropertyDtos = new BasicInputAdapterPropertyDto[properties.length];
                     int index = 0;
@@ -71,6 +71,7 @@
                         String[] propertyNameAndValue = property.split("\\$=");
                         if (propertyNameAndValue != null) {
                             basicInputAdapterPropertyDtos[index] = new BasicInputAdapterPropertyDto();
+
                             basicInputAdapterPropertyDtos[index].setKey(propertyNameAndValue[0].trim());
                             basicInputAdapterPropertyDtos[index].setValue(propertyNameAndValue[1].trim());
                             index++;
@@ -79,13 +80,8 @@
                 }
             }
 
-            if (basicInputAdapterPropertyDtos == null) {
-                msg = "No message configuration properties found.";
 %>
-<%=msg%>
 <%
-                return;
-            }
             if (inputMappingType.equals("wso2event")) {
                 EventMappingPropertyDto[] metaEbProperties = null;
                 EventMappingPropertyDto[] correlationEbProperties = null;
@@ -210,9 +206,13 @@
                     }
                 }
 
-                stub.deployXmlEventReceiverConfiguration(eventReceiverName, streamNameWithVersion, eventAdapterInfo,
-                        parentSelectorXpath, namespaceProperties, xpathProperties, basicInputAdapterPropertyDtos,
-                        EventReceiverUIConstants.STRING_LITERAL_ENABLE.equalsIgnoreCase(customMapping));
+                try {
+                    stub.deployXmlEventReceiverConfiguration(eventReceiverName, streamNameWithVersion, eventAdapterInfo,
+                            parentSelectorXpath, namespaceProperties, xpathProperties, basicInputAdapterPropertyDtos,
+                            EventReceiverUIConstants.STRING_LITERAL_ENABLE.equalsIgnoreCase(customMapping));
+                }catch (Throwable t){
+                    t.printStackTrace();
+                }
             } else if (inputMappingType.equals("map")) {
                 String payloadPropertySet = request.getParameter("mapData");
                 EventMappingPropertyDto[] mapEbProperties = null;
