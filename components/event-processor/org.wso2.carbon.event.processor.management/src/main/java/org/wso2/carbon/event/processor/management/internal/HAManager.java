@@ -21,9 +21,9 @@ import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.HAListener;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
+import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceClientThriftImpl;
 import org.wso2.carbon.event.processor.management.internal.util.Constants;
 
 import java.util.concurrent.Future;
@@ -127,19 +127,17 @@ public class HAManager {
             log.error("Error in getting lock.", e);
         }
 
-        CEPMembership cepMembership = roleToMembershipMap.get(activeId);
-        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagement();
-        for (HAListener haListener: carbonEventProcessingManagementService.haListeners) {
-            haListener.becomePassive(cepMembership, members.keySet());
-        }
+        CEPMembership activeMember = roleToMembershipMap.get(activeId);
+        EventProcessingManager eventProcessingManager = EventProcessingManagementValueHolder.getEventProcessingManager();
+
+        ManagementServiceClient client = new ManagementServiceClientThriftImpl();
+        byte[] state = client.getSnapshot(activeMember);
         readWriteLock.writeLock().unlock();
     }
 
     private void becomeActive() {
-        CarbonEventProcessingManagementService carbonEventProcessingManagementService = EventProcessingManagementValueHolder.getEventProcessingManagement();
-        for (HAListener haListener: carbonEventProcessingManagementService.haListeners) {
-            haListener.becomeActive(members.keySet());
-        }
+        EventProcessingManager eventProcessingManager = EventProcessingManagementValueHolder.getEventProcessingManager();
+
     }
 
     public void shutdown() {

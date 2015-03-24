@@ -25,7 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
-import org.wso2.carbon.event.processor.management.EventProcessingManagement;
+import org.wso2.carbon.event.processor.management.internal.EventProcessingManager;
 
 /**
  * @scr.component name="eventProcessorManagementService.component" immediate="true"
@@ -42,9 +42,9 @@ public class EventProcessingManagementServiceDS {
     protected void activate(ComponentContext context) {
         try {
 
-            EventProcessingManagement eventProcessingManagement = new EventProcessingManagement();
-            EventProcessingManagementValueHolder.registerEventProcessingManagementService(eventProcessingManagement);
-            context.getBundleContext().registerService(EventProcessingManagement.class.getName(), eventProcessingManagement, null);
+            EventProcessingManager eventProcessingManager = new EventProcessingManager();
+            EventProcessingManagementValueHolder.registerEventProcessingManagementService(eventProcessingManager);
+            //context.getBundleContext().registerService(EventProcessingManagement.class.getName(), eventProcessingManagement, null);
 
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed EventProcessorManagementService");
@@ -57,7 +57,7 @@ public class EventProcessingManagementServiceDS {
     }
 
     protected void deactivate(ComponentContext context) {
-        EventProcessingManagementValueHolder.getEventProcessingManagement().shutdown();
+        EventProcessingManagementValueHolder.getEventProcessingManager().shutdown();
     }
 
     protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -80,7 +80,7 @@ public class EventProcessingManagementServiceDS {
             }
 
         });
-        EventProcessingManagementValueHolder.getEventProcessingManagement().init(hazelcastInstance);
+        EventProcessingManagementValueHolder.getEventProcessingManager().init(hazelcastInstance);
     }
 
     protected void unsetHazelcastInstance(HazelcastInstance hazelcastInstance) {

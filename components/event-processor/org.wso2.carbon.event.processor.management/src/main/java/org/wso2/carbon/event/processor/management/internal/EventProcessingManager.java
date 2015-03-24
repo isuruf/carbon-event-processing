@@ -16,14 +16,13 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.processor.management.internal;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.log4j.Logger;
 import org.wso2.carbon.event.processor.core.CEPMembership;
 import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
-import org.wso2.carbon.event.processor.management.internal.HAManager;
 import org.wso2.carbon.event.processor.management.internal.config.ManagementConfigurationBuilder;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
 
@@ -31,20 +30,20 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class EventProcessingManagement {
+public class EventProcessingManager {
 
     public enum Mode {
         SingleNode, HA, Distributed
     }
 
-    private static Logger log = Logger.getLogger(EventProcessingManagement.class);
+    private static Logger log = Logger.getLogger(EventProcessingManager.class);
 
     public ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private Mode mode = Mode.SingleNode;
     private HAManager haManager = null;
     private EventProcessingManagementConfiguration eventProcessingManagementConfiguration;
 
-    public EventProcessingManagement() {
+    public EventProcessingManager() {
         eventProcessingManagementConfiguration = ManagementConfigurationBuilder.getConfiguration();
         if (eventProcessingManagementConfiguration != null) {
             mode = eventProcessingManagementConfiguration.getMode();
@@ -67,10 +66,6 @@ public class EventProcessingManagement {
         }
     }
 
-    public Lock getReadLock() {
-        return readWriteLock.readLock();
-    }
-
     public CEPMembership getCurrentCEPMembershipInfo() {
         return EventProcessingManagementValueHolder.getCurrentCEPMembershipInfo();
     }
@@ -83,5 +78,11 @@ public class EventProcessingManagement {
         if (haManager != null) {
             haManager.shutdown();
         }
+    }
+
+
+    public byte[] getState() {
+        //Stop receivers etc.
+        return EventProcessingManagementValueHolder.getEventProcessorManagementService().getState();
     }
 }

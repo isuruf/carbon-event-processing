@@ -26,19 +26,15 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
 import org.wso2.carbon.event.processor.core.*;
-import org.wso2.carbon.event.processor.core.internal.persistence.PersistenceManager;
-import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.carbon.event.processor.core.exception.ExecutionPlanConfigurationException;
 import org.wso2.carbon.event.processor.core.exception.ExecutionPlanDependencyValidationException;
 import org.wso2.carbon.event.processor.core.exception.ServiceDependencyValidationException;
 import org.wso2.carbon.event.processor.core.exception.StormDeploymentException;
 import org.wso2.carbon.event.processor.core.internal.ds.EventProcessorValueHolder;
-import org.wso2.carbon.event.processor.core.internal.ha.HAManager;
-import org.wso2.carbon.event.processor.core.internal.ha.SiddhiHAInputEventDispatcher;
-import org.wso2.carbon.event.processor.core.internal.ha.SiddhiHAOutputStreamListener;
 import org.wso2.carbon.event.processor.core.internal.listener.AbstractSiddhiInputEventDispatcher;
 import org.wso2.carbon.event.processor.core.internal.listener.SiddhiInputEventDispatcher;
 import org.wso2.carbon.event.processor.core.internal.listener.SiddhiOutputStreamListener;
+import org.wso2.carbon.event.processor.core.internal.persistence.PersistenceManager;
 import org.wso2.carbon.event.processor.core.internal.storm.SiddhiStormInputEventDispatcher;
 import org.wso2.carbon.event.processor.core.internal.storm.SiddhiStormOutputEventListener;
 import org.wso2.carbon.event.processor.core.internal.storm.TopologyManager;
@@ -49,6 +45,7 @@ import org.wso2.carbon.event.processor.core.internal.util.helper.EventProcessorC
 import org.wso2.carbon.event.stream.core.EventProducer;
 import org.wso2.carbon.event.stream.core.SiddhiEventConsumer;
 import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
+import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import org.wso2.siddhi.query.api.definition.AbstractDefinition;
@@ -65,6 +62,12 @@ public class CarbonEventProcessorService implements EventProcessorService {
     // not distinguishing between deployed vs failed here.
     private Map<Integer, List<ExecutionPlanConfigurationFile>> tenantSpecificExecutionPlanFiles;
     private CEPMembership currentCepMembershipInfo;
+
+    public enum Mode {
+        SingleNode, HA, Distributed
+    }
+
+    private Mode mode;
 
     private List<String> importDefinitions;
     private List<String> exportDefinitions;
@@ -293,12 +296,8 @@ public class CarbonEventProcessorService implements EventProcessorService {
                 .get(EventProcessorConstants.SIDDHI_DISTRIBUTED_PROCESSING);
         StormDeploymentConfig stormDeploymentConfig = EventProcessorValueHolder.getStormDeploymentConfig();
 
-        boolean distributed = false;
-        if (isDistributedProcessingEnabledString != null && isDistributedProcessingEnabledString.equalsIgnoreCase("Distributed")) {
-            distributed = true;
-        }
 
-        if (distributed) {
+        if (mode == Mode.Distributed) {
             String queryExpression = EventProcessorUtil.constructQueryExpression(executionPlanConfiguration.getName(),
                     importDefinitions, exportDefinitions, "");
             executionPlanRuntime = siddhiManager.createExecutionPlanRuntime(queryExpression);
@@ -315,7 +314,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
         } else {
             try {
                 String queryExpression = EventProcessorUtil.constructQueryExpression(executionPlanConfiguration.getName(),
-                        importDefinitions, exportDefinitions, "");
+                        importDefinitions, exportDefinitions, executionPlanConfiguration.getQueryExpressions());
                 executionPlanRuntime = siddhiManager.createExecutionPlanRuntime(queryExpression);
             } catch (Exception e) {
                 throw new ExecutionPlanConfigurationException("Invalid query specified, " + e.getMessage(), e);
@@ -327,34 +326,27 @@ public class CarbonEventProcessorService implements EventProcessorService {
                     (configuration.getSiddhiStreamName()));
         }
 
-        HAManager haManager = null;
-        if (isDistributedProcessingEnabledString != null && isDistributedProcessingEnabledString.equalsIgnoreCase("RedundantNode")) {
-            haManager = new HAManager(executionPlanConfiguration.getName(), tenantId,
-                    executionPlanRuntime, inputHandlerMap.size(),
-                    currentCepMembershipInfo);
-        }
-
         PersistenceManager persistenceManager = null;
-        try {
+
+        if (mode == Mode.SingleNode) {
             int persistenceTimeInterval = Integer.parseInt(executionPlanConfiguration.getSiddhiConfigurationProperties().
                     get(EventProcessorConstants.SIDDHI_SNAPSHOT_INTERVAL));
             if (persistenceTimeInterval > 0) {
                 persistenceManager = new PersistenceManager(executionPlanRuntime, EventProcessorValueHolder.getScheduledExecutorService(),
                         persistenceTimeInterval, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId());
             }
-        } catch (NumberFormatException e) {
-
         }
 
+
         ExecutionPlan executionPlan = new ExecutionPlan(executionPlanConfiguration.getName(), executionPlanRuntime,
-                executionPlanConfiguration, haManager, persistenceManager);
+                executionPlanConfiguration, persistenceManager);
         tenantExecutionPlans.put(executionPlanConfiguration.getName(), executionPlan);
 
         /**
          * Section to configure outputs
          */
         SiddhiStormOutputEventListener stormOutputListener = null;
-        if (distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
+        if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
             stormOutputListener = new SiddhiStormOutputEventListener(executionPlanConfiguration, tenantId,
                     stormDeploymentConfig);
             executionPlan.addStormOutputListener(stormOutputListener);
@@ -363,15 +355,10 @@ public class CarbonEventProcessorService implements EventProcessorService {
 
             SiddhiOutputStreamListener streamCallback;
 
-            if (haManager != null) {
-                streamCallback = new SiddhiHAOutputStreamListener(exportedStreamConfiguration.getSiddhiStreamName(),
-                        exportedStreamConfiguration.getStreamId(), executionPlanConfiguration, tenantId);
-                haManager.addStreamCallback((SiddhiHAOutputStreamListener) streamCallback);
-            } else {
-                streamCallback = new SiddhiOutputStreamListener(exportedStreamConfiguration.getSiddhiStreamName(),
-                        exportedStreamConfiguration.getStreamId(), executionPlanConfiguration, tenantId);
-            }
-            if (distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
+            streamCallback = new SiddhiOutputStreamListener(exportedStreamConfiguration.getSiddhiStreamName(),
+                    exportedStreamConfiguration.getStreamId(), executionPlanConfiguration, tenantId);
+
+            if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
                 try {
                     StreamDefinition databridgeDefinition = EventProcessorValueHolder.getEventStreamService()
                             .getStreamDefinition(exportedStreamConfiguration.getStreamId());
@@ -400,12 +387,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             InputHandler inputHandler = inputHandlerMap.get(importedStreamConfiguration.getStreamId());
 
             AbstractSiddhiInputEventDispatcher eventDispatcher;
-            if (haManager != null) {
-                eventDispatcher = new SiddhiHAInputEventDispatcher(importedStreamConfiguration.getStreamId(),
-                        inputHandler, executionPlanConfiguration, tenantId, haManager.getProcessThreadPoolExecutor());
-                haManager.addInputEventDispatcher(importedStreamConfiguration.getStreamId(),
-                        (SiddhiHAInputEventDispatcher) eventDispatcher);
-            } else if (distributed && stormDeploymentConfig != null && stormDeploymentConfig.isReceiverNode()) {
+            if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isReceiverNode()) {
                 StreamDefinition streamDefinition = null;
                 try {
                     streamDefinition = EventProcessorValueHolder.getEventStreamService().getStreamDefinition
@@ -419,7 +401,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             } else {
                 eventDispatcher = new SiddhiInputEventDispatcher(importedStreamConfiguration.getStreamId(),
                         inputHandler, executionPlanConfiguration, tenantId);
-             }
+            }
 
             try {
                 EventProcessorValueHolder.getEventStreamService().subscribe(eventDispatcher);
@@ -432,10 +414,6 @@ public class CarbonEventProcessorService implements EventProcessorService {
         if (executionPlanRuntime != null) {
             executionPlanRuntime.start();
             executionPlanRuntime.restoreLastRevision();
-        }
-
-        if (haManager != null) {
-            haManager.init();
         }
 
         if (persistenceManager != null) {

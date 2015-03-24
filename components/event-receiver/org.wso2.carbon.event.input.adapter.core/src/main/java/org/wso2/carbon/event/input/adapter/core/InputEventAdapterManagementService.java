@@ -16,13 +16,28 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management;
+package org.wso2.carbon.event.input.adapter.core;
 
-import org.wso2.carbon.event.processor.core.CEPMembership;
+public interface InputEventAdapterManagementService {
+    /**
+     * Get the state of the event adapter service
+     * @return state serialised as a byte array
+     */
+    public byte[] getState();
 
-import java.util.Set;
+    /**
+     * Restore the state of the event processor service
+     * @param bytes state of an event processor service returned by a call to getState()
+     */
+    public void restoreState(byte[] bytes);
 
-public interface HAListener {
-    public void becomePassive(CEPMembership activeMember, Set<CEPMembership> members);
-    public void becomeActive(Set<CEPMembership> members);
+    /**
+     * Pause the event processor service
+     */
+    public void pause();
+
+    /**
+     * Resume the event processor service
+     */
+    public void resume();
 }

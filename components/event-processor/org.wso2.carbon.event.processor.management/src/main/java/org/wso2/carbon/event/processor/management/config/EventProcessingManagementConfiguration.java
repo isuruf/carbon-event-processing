@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.event.processor.management.config;
 
-import org.wso2.carbon.event.processor.management.EventProcessingManagement.Mode;
+import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
 
 public interface EventProcessingManagementConfiguration {
     public Mode getMode();

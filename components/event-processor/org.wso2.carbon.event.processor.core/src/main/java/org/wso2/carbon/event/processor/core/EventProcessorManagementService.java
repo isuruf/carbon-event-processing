@@ -32,10 +32,9 @@ public interface EventProcessorManagementService {
     public void restoreState(byte[] bytes);
 
     /**
-     * Try to pause the event processor service
-     * @param timeout to return
+     * Pause the event processor service
      */
-    public void tryPause(long timeout);
+    public void pause();
 
     /**
      * Resume the event processor service

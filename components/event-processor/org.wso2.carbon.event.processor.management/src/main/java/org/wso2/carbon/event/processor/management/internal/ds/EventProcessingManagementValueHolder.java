@@ -20,10 +20,10 @@ package org.wso2.carbon.event.processor.management.internal.ds;
 import com.hazelcast.core.HazelcastInstance;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.EventProcessingManagement;
+import org.wso2.carbon.event.processor.management.internal.EventProcessingManager;
 
 public class EventProcessingManagementValueHolder {
-    private static EventProcessingManagement eventProcessingManagement;
+    private static EventProcessingManager eventProcessingManager;
     private static HazelcastInstance hazelcastInstance;
     private static EventProcessorManagementService eventProcessorManagementService;
     private static CEPMembership currentCEPMembershipInfo;
@@ -36,12 +36,12 @@ public class EventProcessingManagementValueHolder {
         EventProcessingManagementValueHolder.currentCEPMembershipInfo = currentCEPMembershipInfo;
     }
 
-    public static EventProcessingManagement getEventProcessingManagement() {
-        return eventProcessingManagement;
+    public static EventProcessingManager getEventProcessingManager() {
+        return eventProcessingManager;
     }
 
-    public static void registerEventProcessingManagementService(EventProcessingManagement eventProcessingManagement) {
-        EventProcessingManagementValueHolder.eventProcessingManagement = eventProcessingManagement;
+    public static void registerEventProcessingManagementService(EventProcessingManager eventProcessingManager) {
+        EventProcessingManagementValueHolder.eventProcessingManager = eventProcessingManager;
     }
 
     public static void registerHazelcastInstance(HazelcastInstance hazelcastInstance) {

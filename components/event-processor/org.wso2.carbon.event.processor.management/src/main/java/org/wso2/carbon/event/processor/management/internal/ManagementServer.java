@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.carbon.event.processor.management.internal.server;
+package org.wso2.carbon.event.processor.management.internal;
 
 
 import org.apache.commons.logging.Log;
@@ -24,25 +24,24 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
-import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
-import org.wso2.carbon.event.processor.management.internal.thrift.service.HAManagementService;
+import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceImpl;
+import org.wso2.carbon.event.processor.management.internal.thrift.service.ManagementService;
 import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.EventProcessingManagement.Mode;
+import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
 import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
 import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 
 import java.net.InetSocketAddress;
 
-public class HAManagementServer {
-    private static final Log log = LogFactory.getLog(HAManagementServer.class);
+public class ManagementServer {
+    private static final Log log = LogFactory.getLog(ManagementServer.class);
 
     public static void start(EventProcessingManagementConfiguration config) {
 
         try {
             if (config.getMode() == Mode.HA) {
                 HAConfiguration haConfiguration = (HAConfiguration) config;
-                carbonEventProcessorService.addCurrentCEPMembership(haConfiguration.getManagement());
-                start(haConfiguration.getManagement(), carbonEventProcessorService);
+                start(haConfiguration.getManagement());
             }
         } catch (RuntimeException e) {
             log.error("Error in starting Agent Server ", e);
@@ -51,13 +50,13 @@ public class HAManagementServer {
         }
     }
 
-    private static void start(CEPMembership cepMembership, CarbonEventProcessorService carbonEventProcessorService) throws Exception {
+    private static void start(CEPMembership cepMembership) throws Exception {
         try {
             TServerSocket serverTransport = new TServerSocket(
                     new InetSocketAddress(cepMembership.getHost(), cepMembership.getPort()));
-            HAManagementService.Processor<HAManagementServiceImpl> processor =
-                    new HAManagementService.Processor<HAManagementServiceImpl>(
-                            new HAManagementServiceImpl(carbonEventProcessorService));
+            ManagementService.Processor<ManagementServiceImpl> processor =
+                    new ManagementService.Processor<ManagementServiceImpl>(
+                            new ManagementServiceImpl());
             TThreadPoolServer dataReceiverServer = new TThreadPoolServer(
                     new TThreadPoolServer.Args(serverTransport).processor(processor));
             Thread thread = new Thread(new ServerThread(dataReceiverServer));

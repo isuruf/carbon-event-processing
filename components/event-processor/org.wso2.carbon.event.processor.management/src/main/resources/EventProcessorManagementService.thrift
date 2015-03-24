@@ -15,13 +15,12 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.carbon.event.processor.core.internal.ha;
+namespace java org.wso2.carbon.event.processor.management.internal.thrift.service
 
+include "Exception.thrift"
+include "Data.thrift"
 
-import org.wso2.carbon.event.processor.core.CEPMembership;
-
-public interface HAServiceClient {
-
-    SnapshotData getSnapshot(int tenantId, String executionPlan, CEPMembership activeCepMembership, CEPMembership currentCepMembership) throws Exception;
+service ManagementService {
+    Data.SnapshotData takeSnapshot() throws  (1:Exception.InternalServerException ise)
 
 }

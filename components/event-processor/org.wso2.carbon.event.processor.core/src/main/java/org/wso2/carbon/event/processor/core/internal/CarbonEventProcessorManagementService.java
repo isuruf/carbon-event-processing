@@ -22,13 +22,11 @@ import org.apache.log4j.Logger;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.ExecutionPlan;
 import org.wso2.carbon.event.processor.core.internal.ds.EventProcessorValueHolder;
-import org.wso2.carbon.event.processor.core.internal.ha.SnapshotData;
 import org.wso2.carbon.event.processor.core.internal.util.ByteSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -40,12 +38,12 @@ public class CarbonEventProcessorManagementService implements EventProcessorMana
     public byte[] getState() {
         Map<Integer, TreeMap<String, ExecutionPlan>> map
                 = EventProcessorValueHolder.getEventProcessorService().getTenantSpecificExecutionPlans();
-        HashMap<Integer, HashMap<String, SnapshotData>> snapshotdata = new HashMap<Integer, HashMap<String, SnapshotData>>();
+        HashMap<Integer, HashMap<String, byte[]>> snapshotdata = new HashMap<Integer, HashMap<String, byte[]>>();
 
         for (Map.Entry<Integer, TreeMap<String, ExecutionPlan>> tenantEntry : map.entrySet()) {
-            HashMap<String, SnapshotData> tenantData = new HashMap<String, SnapshotData>();
+            HashMap<String, byte[]> tenantData = new HashMap<String, byte[]>();
             for (Map.Entry<String, ExecutionPlan> executionPlanData : tenantEntry.getValue().entrySet()) {
-                tenantData.put(executionPlanData.getKey(), executionPlanData.getValue().getHaManager().getActiveSnapshotData());
+                tenantData.put(executionPlanData.getKey(), executionPlanData.getValue().getExecutionPlanRuntime().snapshot());
             }
             snapshotdata.put(tenantEntry.getKey(), tenantData);
         }
@@ -55,22 +53,18 @@ public class CarbonEventProcessorManagementService implements EventProcessorMana
     public void restoreState(byte[] bytes) {
         Map<Integer, TreeMap<String, ExecutionPlan>> map
                 = EventProcessorValueHolder.getEventProcessorService().getTenantSpecificExecutionPlans();
-        HashMap<Integer, HashMap<String, SnapshotData>> snapshotdataList = (HashMap<Integer, HashMap<String, SnapshotData>>) ByteSerializer.BToO(bytes);
+        HashMap<Integer, HashMap<String, byte[]>> snapshotdataList = (HashMap<Integer, HashMap<String, byte[]>>) ByteSerializer.BToO(bytes);
 
         for (Map.Entry<Integer, TreeMap<String, ExecutionPlan>> tenantEntry : map.entrySet()) {
             for (Map.Entry<String, ExecutionPlan> executionPlanData : tenantEntry.getValue().entrySet()) {
-                SnapshotData snapshotData = snapshotdataList.get(tenantEntry.getKey()).get(executionPlanData.getKey());
-                executionPlanData.getValue().getHaManager().restoreSnapshotData(snapshotData);
+                byte[] snapshotData = snapshotdataList.get(tenantEntry.getKey()).get(executionPlanData.getKey());
+                executionPlanData.getValue().getExecutionPlanRuntime().restore(snapshotData);
             }
         }
     }
 
-    public void tryPause(long timeout) {
-        try {
-            readWriteLock.writeLock().tryLock(timeout, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            log.error("Error when getting lock.", e);
-        }
+    public void pause() {
+        readWriteLock.writeLock().lock();
     }
 
     public void resume() {

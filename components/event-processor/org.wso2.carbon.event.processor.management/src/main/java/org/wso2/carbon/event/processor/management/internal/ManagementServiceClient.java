@@ -16,24 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.config;
+package org.wso2.carbon.event.processor.management.internal;
 
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
+import org.wso2.carbon.event.processor.core.CEPMembership;
 
-public class SingleNodeConfiguration implements EventProcessingManagementConfiguration {
-
-    private String persistenceClass;
-
-    public String getPersistenceClass() {
-        return persistenceClass;
-    }
-
-    public void setPersistenceClass(String persistenceClass) {
-        this.persistenceClass = persistenceClass;
-    }
-
-    @Override
-    public Mode getMode() {
-        return Mode.SingleNode;
-    }
+public interface ManagementServiceClient {
+    public byte[] getSnapshot(CEPMembership activeMember);
 }
