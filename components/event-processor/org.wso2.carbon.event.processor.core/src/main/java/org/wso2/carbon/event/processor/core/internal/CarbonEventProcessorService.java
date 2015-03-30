@@ -317,7 +317,8 @@ public class CarbonEventProcessorService implements EventProcessorService {
         } else {
             try {
                 String queryExpression = EventProcessorUtil.constructQueryExpression(executionPlanConfiguration.getName(),
-                        importDefinitions, exportDefinitions, executionPlanConfiguration.getQueryExpressions());
+                        importDefinitions, exportDefinitions,
+                        executionPlanConfiguration.getQueryExpressions());
                 executionPlanRuntime = siddhiManager.createExecutionPlanRuntime(queryExpression);
             } catch (Exception e) {
                 throw new ExecutionPlanConfigurationException("Invalid query specified, " + e.getMessage(), e);
