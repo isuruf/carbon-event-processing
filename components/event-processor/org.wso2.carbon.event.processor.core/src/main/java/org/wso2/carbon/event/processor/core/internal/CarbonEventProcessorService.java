@@ -24,6 +24,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
+import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
+import org.wso2.carbon.event.processor.common.config.ManagementInfo;
+import org.wso2.carbon.event.processor.common.config.Mode;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
 import org.wso2.carbon.event.processor.core.*;
 import org.wso2.carbon.event.processor.core.exception.ExecutionPlanConfigurationException;
@@ -61,12 +64,8 @@ public class CarbonEventProcessorService implements EventProcessorService {
     private Map<Integer, TreeMap<String, ExecutionPlan>> tenantSpecificExecutionPlans;
     // not distinguishing between deployed vs failed here.
     private Map<Integer, List<ExecutionPlanConfigurationFile>> tenantSpecificExecutionPlanFiles;
-    private CEPMembership currentCepMembershipInfo;
 
-    public enum Mode {
-        SingleNode, HA, Distributed
-    }
-    private Mode mode;
+    private ManagementInfo managementInfo;
 
     private List<String> importDefinitions;
     private List<String> exportDefinitions;
@@ -74,6 +73,11 @@ public class CarbonEventProcessorService implements EventProcessorService {
     public CarbonEventProcessorService() {
         tenantSpecificExecutionPlans = new ConcurrentHashMap<Integer, TreeMap<String, ExecutionPlan>>();
         tenantSpecificExecutionPlanFiles = new ConcurrentHashMap<Integer, List<ExecutionPlanConfigurationFile>>();
+        try {
+            managementInfo = new ManagementInfo();
+        } catch (ManagementConfigurationException e) {
+            log.error(e);
+        }
     }
 
     @Override
@@ -296,11 +300,11 @@ public class CarbonEventProcessorService implements EventProcessorService {
         StormDeploymentConfig stormDeploymentConfig = EventProcessorValueHolder.getStormDeploymentConfig();
 
 
-        if (mode == Mode.Distributed) {
+        if (managementInfo.getMode() == Mode.Distributed) {
             String queryExpression = EventProcessorUtil.constructQueryExpression(executionPlanConfiguration.getName(),
                     importDefinitions, exportDefinitions, "");
             executionPlanRuntime = siddhiManager.createExecutionPlanRuntime(queryExpression);
-            if (stormDeploymentConfig != null && stormDeploymentConfig.isManagerNode() && EventProcessorValueHolder
+            if (managementInfo.isManager() && EventProcessorValueHolder
                     .getStormManagerServer().isStormManager()) {
                 try {
                     TopologyManager.submitTopology(executionPlanConfiguration, importDefinitions, exportDefinitions,
@@ -327,7 +331,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
 
         PersistenceManager persistenceManager = null;
 
-        if (mode == Mode.SingleNode) {
+        if (managementInfo.getMode() == Mode.SingleNode) {
             int persistenceTimeInterval = Integer.parseInt(executionPlanConfiguration.getSiddhiConfigurationProperties().
                     get(EventProcessorConstants.SIDDHI_SNAPSHOT_INTERVAL));
             if (persistenceTimeInterval > 0) {
@@ -345,7 +349,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
          * Section to configure outputs
          */
         SiddhiStormOutputEventListener stormOutputListener = null;
-        if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
+        if (managementInfo.getMode() == Mode.Distributed && managementInfo.isPublisher()) {
             stormOutputListener = new SiddhiStormOutputEventListener(executionPlanConfiguration, tenantId,
                     stormDeploymentConfig);
             executionPlan.addStormOutputListener(stormOutputListener);
@@ -357,7 +361,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             streamCallback = new SiddhiOutputStreamListener(exportedStreamConfiguration.getSiddhiStreamName(),
                     exportedStreamConfiguration.getStreamId(), executionPlanConfiguration, tenantId);
 
-            if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
+            if (managementInfo.getMode() == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isPublisherNode()) {
                 try {
                     StreamDefinition databridgeDefinition = EventProcessorValueHolder.getEventStreamService()
                             .getStreamDefinition(exportedStreamConfiguration.getStreamId());
@@ -386,7 +390,7 @@ public class CarbonEventProcessorService implements EventProcessorService {
             InputHandler inputHandler = inputHandlerMap.get(importedStreamConfiguration.getStreamId());
 
             AbstractSiddhiInputEventDispatcher eventDispatcher;
-            if (mode == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isReceiverNode()) {
+            if (managementInfo.getMode() == Mode.Distributed && stormDeploymentConfig != null && stormDeploymentConfig.isReceiverNode()) {
                 StreamDefinition streamDefinition = null;
                 try {
                     streamDefinition = EventProcessorValueHolder.getEventStreamService().getStreamDefinition
@@ -843,10 +847,6 @@ public class CarbonEventProcessorService implements EventProcessorService {
 
     public Map<Integer, TreeMap<String, ExecutionPlan>> getTenantSpecificExecutionPlans() {
         return tenantSpecificExecutionPlans;
-    }
-
-    public void addCurrentCEPMembership(CEPMembership cepMembership) {
-        currentCepMembershipInfo = cepMembership;
     }
 
     public void shutdown() {

@@ -87,7 +87,7 @@ public final class SOAPEventAdapter implements InputEventAdapter {
     }
 
     @Override
-    public boolean duplicateEvents() {
+    public boolean isEventDuplicatedInCluster() {
         return true;
     }
 

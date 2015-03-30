@@ -16,22 +16,31 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.input.adapter.core.internal.management;
+package org.wso2.carbon.event.receiver.core.internal.management;
 
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
+import org.wso2.carbon.event.stream.core.EventProducerCallback;
 
-public abstract class AbstractInputEventDispatcher {
-    protected InputEventAdapterSubscription inputEventAdapterSubscription;
+public class InputEventDispatcher extends AbstractInputEventDispatcher {
 
-    public AbstractInputEventDispatcher(InputEventAdapterSubscription inputEventAdapterSubscription) {
-        this.inputEventAdapterSubscription = inputEventAdapterSubscription;
+    @Override
+    public void onEvent(Object[] object) {
+        if(!isDrop()) {
+            callBack.sendEventData(object);
+        }
     }
 
-    public abstract void onEvent(Object object);
+    @Override
+    public void shutdown() {
 
-    public abstract void shutdown();
+    }
 
-    public abstract byte[] getState();
+    @Override
+    public byte[] getState() {
+        return null;
+    }
 
-    public abstract void syncState(byte[] bytes);
+    @Override
+    public void syncState(byte[] bytes) {
+
+    }
 }

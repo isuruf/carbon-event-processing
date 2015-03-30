@@ -16,9 +16,11 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.input.adapter.core;
+package org.wso2.carbon.event.receiver.core;
 
-public interface InputEventAdapterManagementService {
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
+
+public interface EventReceiverManagementService {
     /**
      * Get the state of the input event adapter service
      * @return state serialised as a byte array
@@ -40,4 +42,12 @@ public interface InputEventAdapterManagementService {
      * Resume the input event adapter service
      */
     public void resume();
+
+
+    /**
+     * Start the input event adapter service
+     */
+    public void start();
+
+    public void setOtherMember(HostAndPort otherMember);
 }

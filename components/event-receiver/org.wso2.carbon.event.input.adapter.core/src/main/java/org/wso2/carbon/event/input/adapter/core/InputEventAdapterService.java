@@ -44,8 +44,7 @@ public interface InputEventAdapterService {
      */
     InputEventAdapterSchema getInputEventAdapterSchema(String eventAdapterType);
 
-
-    void create(InputEventAdapterConfiguration inputEventAdapterConfiguration, InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException;
+    InputAdapterRuntime create(InputEventAdapterConfiguration inputEventAdapterConfiguration, InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException;
 
     /**
      * publish testConnect message using the given event adapter.

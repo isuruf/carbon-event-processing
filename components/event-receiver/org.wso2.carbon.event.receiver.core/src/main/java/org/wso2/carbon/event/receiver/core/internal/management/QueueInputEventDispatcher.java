@@ -16,36 +16,33 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.input.adapter.core.internal.management;
+package org.wso2.carbon.event.receiver.core.internal.management;
 
-import com.hazelcast.nio.serialization.ConstantSerializers;
 import org.apache.log4j.Logger;
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
+import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Arrays;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
 public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
 
     private Logger log = Logger.getLogger(AbstractInputEventDispatcher.class);
-    private final BlockingQueue<Object> eventQueue = new LinkedBlockingQueue<Object>();
+    private final BlockingQueue<Object[]> eventQueue = new LinkedBlockingQueue<Object[]>();
     private Lock readLock;
-    private boolean alive;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public QueueInputEventDispatcher(InputEventAdapterSubscription inputEventAdapterSubscription, Lock readLock) {
-        super(inputEventAdapterSubscription);
+    public QueueInputEventDispatcher(Lock readLock) {
         this.readLock = readLock;
-        new Thread(new SiddhiProcessInvoker()).run();
-        this.alive = true;
+        executorService.submit(new QueueInputEventDispatcherWorker());
     }
 
-    public BlockingQueue<Object> getEventQueue() {
+    public BlockingQueue<Object[]> getEventQueue() {
         return eventQueue;
     }
 
     @Override
-    public void onEvent(Object event) {
+    public void onEvent(Object[] event) {
         try {
             eventQueue.put(event);
         } catch (InterruptedException e) {
@@ -55,19 +52,19 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
 
     @Override
     public void shutdown() {
-        alive = false;
+        executorService.shutdown();
     }
 
     @Override
     public byte[] getState() {
-        return ByteSerializer.OToB(eventQueue.toArray());
+        return ByteSerializer.OToB(eventQueue);
     }
 
     @Override
     public void syncState(byte[] bytes) {
         Object[] events = (Object[])ByteSerializer.BToO(bytes);
         for(Object object: events) {
-            if(object.equals(eventQueue.peek())) {
+            if(Arrays.deepEquals((Object[]) object, eventQueue.peek())) {
                 eventQueue.poll();
             } else {
                 break;
@@ -75,7 +72,7 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
         }
     }
 
-    class SiddhiProcessInvoker implements Runnable {
+    class QueueInputEventDispatcherWorker implements Runnable {
 
         /**
          * When an object implementing interface <code>Runnable</code> is used
@@ -90,12 +87,17 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
          */
         @Override
         public void run() {
-            while (alive) {
+            while (true) {
                 try {
                     readLock.lock();
-                    Object event = eventQueue.take();
+                    Object[] event = eventQueue.take();
                     readLock.unlock();
-                    inputEventAdapterSubscription.onEvent(event);
+                    if(!isDrop()) {
+                        callBack.sendEventData(event);
+                    }
+                    if(isSendToOther()) {
+                        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().sendToOther(streamId, event);
+                    }
                 } catch (InterruptedException e) {
                     log.error("Interrupted while waiting to get an event from queue.", e);
                 }

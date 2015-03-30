@@ -18,25 +18,15 @@
 package org.wso2.carbon.event.processor.management.internal.ds;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterManagementService;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
-import org.wso2.carbon.event.processor.core.CEPMembership;
 import org.wso2.carbon.event.processor.management.internal.EventProcessingManager;
+import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 
 public class EventProcessingManagementValueHolder {
     private static EventProcessingManager eventProcessingManager;
     private static HazelcastInstance hazelcastInstance;
     private static EventProcessorManagementService eventProcessorManagementService;
-    private static InputEventAdapterManagementService inputEventAdapterManagementService;
-    private static CEPMembership currentCEPMembershipInfo;
-
-    public static CEPMembership getCurrentCEPMembershipInfo() {
-        return currentCEPMembershipInfo;
-    }
-
-    public static void setCurrentCEPMembershipInfo(CEPMembership currentCEPMembershipInfo) {
-        EventProcessingManagementValueHolder.currentCEPMembershipInfo = currentCEPMembershipInfo;
-    }
+    private static EventReceiverManagementService eventReceiverManagementService;
 
     public static EventProcessingManager getEventProcessingManager() {
         return eventProcessingManager;
@@ -62,7 +52,12 @@ public class EventProcessingManagementValueHolder {
         EventProcessingManagementValueHolder.eventProcessorManagementService = eventProcessorManagementService;
     }
 
-    public static void registerInputEventAdapterManagementService(InputEventAdapterManagementService inputEventAdapterManagementService) {
-        EventProcessingManagementValueHolder.inputEventAdapterManagementService = inputEventAdapterManagementService;
+    public static EventReceiverManagementService getEventReceiverManagementService() {
+        return eventReceiverManagementService;
     }
+
+    public static void registerEventReceiverManagementService(EventReceiverManagementService eventReceiverManagementService) {
+        EventProcessingManagementValueHolder.eventReceiverManagementService = eventReceiverManagementService;
+    }
+
 }

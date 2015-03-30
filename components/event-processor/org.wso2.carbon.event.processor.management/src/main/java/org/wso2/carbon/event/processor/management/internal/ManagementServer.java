@@ -24,12 +24,12 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
+import org.wso2.carbon.event.processor.common.config.Mode;
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
+import org.wso2.carbon.event.processor.management.internal.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceImpl;
 import org.wso2.carbon.event.processor.management.internal.thrift.service.ManagementService;
-import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
-import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 
 import java.net.InetSocketAddress;
 
@@ -37,7 +37,6 @@ public class ManagementServer {
     private static final Log log = LogFactory.getLog(ManagementServer.class);
 
     public static void start(EventProcessingManagementConfiguration config) {
-
         try {
             if (config.getMode() == Mode.HA) {
                 HAConfiguration haConfiguration = (HAConfiguration) config;
@@ -50,21 +49,21 @@ public class ManagementServer {
         }
     }
 
-    private static void start(CEPMembership cepMembership) throws Exception {
+    private static void start(HostAndPort hostAndPort) throws Exception {
         try {
             TServerSocket serverTransport = new TServerSocket(
-                    new InetSocketAddress(cepMembership.getHost(), cepMembership.getPort()));
+                    new InetSocketAddress(hostAndPort.getHostName(), hostAndPort.getPort()));
             ManagementService.Processor<ManagementServiceImpl> processor =
                     new ManagementService.Processor<ManagementServiceImpl>(
                             new ManagementServiceImpl());
             TThreadPoolServer dataReceiverServer = new TThreadPoolServer(
                     new TThreadPoolServer.Args(serverTransport).processor(processor));
             Thread thread = new Thread(new ServerThread(dataReceiverServer));
-            log.info("CEP HA Management Thrift Server started on " + cepMembership.getHost() + ":" + cepMembership.getPort());
+            log.info("CEP HA Management Thrift Server started on " + hostAndPort.getHostName() + ":" + hostAndPort.getPort());
             thread.start();
         } catch (TTransportException e) {
-            throw new Exception("Cannot start CEP HA Management Thrift server on port " +  cepMembership.getPort() +
-                    " on host " + cepMembership.getHost(), e);
+            throw new Exception("Cannot start CEP HA Management Thrift server on port " + hostAndPort.getPort() +
+                    " on host " + hostAndPort.getHostName(), e);
         }
     }
 

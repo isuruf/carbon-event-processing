@@ -16,24 +16,23 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.config;
+package org.wso2.carbon.event.processor.common.config;
 
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
 
-public class SingleNodeConfiguration implements EventProcessingManagementConfiguration {
+public class ManagementConfigurationException extends Exception {
 
-    private String persistenceClass;
-
-    public String getPersistenceClass() {
-        return persistenceClass;
+    public ManagementConfigurationException() {
     }
 
-    public void setPersistenceClass(String persistenceClass) {
-        this.persistenceClass = persistenceClass;
+    public ManagementConfigurationException(String message) {
+        super(message);
     }
 
-    @Override
-    public Mode getMode() {
-        return Mode.SingleNode;
+    public ManagementConfigurationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ManagementConfigurationException(Throwable cause) {
+        super(cause);
     }
 }

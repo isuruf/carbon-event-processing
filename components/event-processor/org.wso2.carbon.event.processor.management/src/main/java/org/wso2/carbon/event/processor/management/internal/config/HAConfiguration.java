@@ -15,14 +15,14 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.carbon.event.processor.management.config;
+package org.wso2.carbon.event.processor.management.internal.config;
 
-import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
+import org.wso2.carbon.event.processor.common.config.Mode;
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
 
 public class HAConfiguration implements EventProcessingManagementConfiguration {
-    private CEPMembership management;
-    private CEPMembership transport;
+    private HostAndPort management;
+    private HostAndPort transport;
     private int reconnectionInterval;
 
     public HAConfiguration() {
@@ -36,22 +36,21 @@ public class HAConfiguration implements EventProcessingManagementConfiguration {
         this.reconnectionInterval = reconnectionInterval;
     }
 
-    public CEPMembership getManagement() {
+    public HostAndPort getManagement() {
         return management;
     }
 
-    public CEPMembership getTransport() {
+    public HostAndPort getTransport() {
         return transport;
     }
 
     public void setManagement(String host, int port) {
-        this.management = new CEPMembership(host, port);
+        this.management = new HostAndPort(host, port);
     }
 
     public void setTransport(String host, int port, int reconnectionInterval) {
-        this.transport = new CEPMembership(host, port);
+        this.transport = new HostAndPort(host, port);
     }
-
 
     @Override
     public Mode getMode() {

@@ -14,14 +14,11 @@
  */
 package org.wso2.carbon.event.input.adapter.core.internal.ds;
 
-import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory;
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterManagementService;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterService;
-import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterManagementService;
 import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterService;
 import org.wso2.carbon.event.input.adapter.core.internal.EventAdapterConstants;
 import org.wso2.carbon.event.input.adapter.core.internal.config.AdapterConfigs;
@@ -62,13 +59,9 @@ public class InputEventAdapterServiceDS {
         CarbonInputEventAdapterService inputEventAdapterService = new CarbonInputEventAdapterService();
         InputEventAdapterServiceValueHolder.setCarbonInputEventAdapterService(inputEventAdapterService);
 
-        CarbonInputEventAdapterManagementService inputEventAdapterManagementService = new CarbonInputEventAdapterManagementService();
-        InputEventAdapterServiceValueHolder.setCarbonInputEventAdapterManagementService(inputEventAdapterManagementService);
-
         registerInputEventAdapterFactories();
 
         context.getBundleContext().registerService(InputEventAdapterService.class.getName(), inputEventAdapterService, null);
-        context.getBundleContext().registerService(InputEventAdapterManagementService.class.getName(), inputEventAdapterManagementService, null);
 
         try {
             if (log.isDebugEnabled()) {

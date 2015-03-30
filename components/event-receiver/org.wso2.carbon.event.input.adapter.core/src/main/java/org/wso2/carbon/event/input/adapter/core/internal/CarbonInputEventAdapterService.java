@@ -14,8 +14,6 @@
  */
 package org.wso2.carbon.event.input.adapter.core.internal;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -25,8 +23,6 @@ import org.wso2.carbon.event.input.adapter.core.*;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterException;
 import org.wso2.carbon.event.input.adapter.core.exception.TestConnectionNotSupportedException;
 import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterServiceValueHolder;
-import org.wso2.carbon.event.input.adapter.core.internal.management.InputEventDispatcher;
-import org.wso2.carbon.event.input.adapter.core.internal.management.QueueInputEventDispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,20 +40,13 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     private static final String HA_PREFIX = "org.wso2.cep.org.wso2.carbon.event.processor.management.ha";
 
     private Map<String, InputEventAdapterFactory> eventAdapterFactoryMap;
-    private ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> tenantSpecificEventAdapters;
+    private ConcurrentHashMap<Integer, ConcurrentHashMap<String, CarbonInputAdapterRuntime>> tenantSpecificEventAdapters;
     private ScheduledExecutorService scheduledExecutorService;
-
-    private enum Mode {
-        SingleNode, HA, Distributed
-    }
-
-    //TODO: get this from the config file
-    private Mode mode;
-    private boolean start = false;
+    private boolean startPolling = false;
 
     public CarbonInputEventAdapterService() {
         this.eventAdapterFactoryMap = new ConcurrentHashMap<String, InputEventAdapterFactory>();
-        this.tenantSpecificEventAdapters = new ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>>();
+        this.tenantSpecificEventAdapters = new ConcurrentHashMap<Integer, ConcurrentHashMap<String, CarbonInputAdapterRuntime>>();
         this.scheduledExecutorService = Executors.newScheduledThreadPool(1);
     }
 
@@ -93,11 +82,11 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     }
 
     @Override
-    public void create(InputEventAdapterConfiguration inputEventAdapterConfiguration, InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException {
+    public InputAdapterRuntime create(InputEventAdapterConfiguration inputEventAdapterConfiguration, InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException {
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-        ConcurrentHashMap<String, InputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
+        ConcurrentHashMap<String, CarbonInputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
         if (eventAdapters == null) {
-            tenantSpecificEventAdapters.putIfAbsent(tenantId, new ConcurrentHashMap<String, InputAdapterRuntime>());
+            tenantSpecificEventAdapters.putIfAbsent(tenantId, new ConcurrentHashMap<String, CarbonInputAdapterRuntime>());
             eventAdapters = tenantSpecificEventAdapters.get(tenantId);
         }
         InputEventAdapterFactory adapterFactory = eventAdapterFactoryMap.get(inputEventAdapterConfiguration.getType());
@@ -118,23 +107,11 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
 
         InputEventAdapter inputEventAdapter = adapterFactory.
                 createEventAdapter(inputEventAdapterConfiguration, globalProperties);
-        InputAdapterRuntime inputAdapterRuntime;
+        CarbonInputAdapterRuntime carbonInputAdapterRuntime = new CarbonInputAdapterRuntime(inputEventAdapter, inputEventAdapterConfiguration.getName(),
+                inputEventAdapterSubscription);
 
-        if (mode == Mode.HA && inputEventAdapter.duplicateEvents()) {
-            inputAdapterRuntime = new InputAdapterRuntime(inputEventAdapter, inputEventAdapterConfiguration.getName(),
-                    new QueueInputEventDispatcher(inputEventAdapterSubscription,
-                            InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterManagementService().getReadLock()));
-        } else {
-            // In HA Mode
-            inputAdapterRuntime = new InputAdapterRuntime(inputEventAdapter, inputEventAdapterConfiguration.getName(),
-                    new InputEventDispatcher(inputEventAdapterSubscription));
-        }
-        eventAdapters.put(inputEventAdapterConfiguration.getName(), inputAdapterRuntime);
-        if (mode == Mode.SingleNode || start
-                || (mode == Mode.HA && inputEventAdapter.duplicateEvents())
-                || (mode == Mode.Distributed && !inputEventAdapter.duplicateEvents())) {
-            inputAdapterRuntime.start();
-        }
+        eventAdapters.put(inputEventAdapterConfiguration.getName(), carbonInputAdapterRuntime);
+        return carbonInputAdapterRuntime;
     }
 
     /**
@@ -181,40 +158,67 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     @Override
     public void destroy(String name) {
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-        ConcurrentHashMap<String, InputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
+        ConcurrentHashMap<String, CarbonInputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
         if (eventAdapters == null) {
             return;
         }
-        InputAdapterRuntime inputAdapterRuntime = eventAdapters.remove(name);
-        if (inputAdapterRuntime != null) {
-            inputAdapterRuntime.destroy();
+        CarbonInputAdapterRuntime carbonInputAdapterRuntime = eventAdapters.remove(name);
+        if (carbonInputAdapterRuntime != null) {
+            carbonInputAdapterRuntime.destroy();
         }
     }
 
-    public void startInputEventAdapters() {
-        Map<String, InputAdapterRuntime> map;
-        int tenantId;
-        start = true;
-        for (Map.Entry<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> pair : tenantSpecificEventAdapters.entrySet()) {
-            map = pair.getValue();
-            tenantId = pair.getKey();
-            try {
-                PrivilegedCarbonContext.startTenantFlow();
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
-                for (InputAdapterRuntime inputAdapterRuntime : map.values()) {
-                    inputAdapterRuntime.start();
-                }
-            } catch (Exception e) {
-                log.error("Unable to start event adpaters for tenant :" + tenantId, e);
-            } finally {
-                PrivilegedCarbonContext.endTenantFlow();
-            }
-        }
-    }
-
-    public ConcurrentHashMap<Integer, ConcurrentHashMap<String, InputAdapterRuntime>> getTenantSpecificEventAdapters() {
+    public ConcurrentHashMap<Integer, ConcurrentHashMap<String, CarbonInputAdapterRuntime>> getTenantSpecificEventAdapters() {
         return tenantSpecificEventAdapters;
     }
 
+    /*
+    @Override
+    public void connect(String name) {
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        ConcurrentHashMap<String, CarbonInputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
+        if (eventAdapters == null) {
+            return;
+        }
+        CarbonInputAdapterRuntime carbonInputAdapterRuntime = eventAdapters.get(name);
+        if (carbonInputAdapterRuntime != null) {
+            carbonInputAdapterRuntime.start();
+        }
+    }
+
+    @Override
+    public List<String> getPollingAdapters() {
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        ConcurrentHashMap<String, CarbonInputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
+        if (eventAdapters == null) {
+            return new ArrayList<String>(0);
+        }
+        List<String> list = new ArrayList<String>();
+        for(Map.Entry<String, CarbonInputAdapterRuntime> entry: eventAdapters.entrySet()) {
+            if(entry.getValue().isPolling()) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<String> getEventDuplicatedInClusterAdapters() {
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        ConcurrentHashMap<String, CarbonInputAdapterRuntime> eventAdapters = tenantSpecificEventAdapters.get(tenantId);
+        if (eventAdapters == null) {
+            return new ArrayList<String>(0);
+        }
+        List<String> list = new ArrayList<String>();
+        for(Map.Entry<String, CarbonInputAdapterRuntime> entry: eventAdapters.entrySet()) {
+            if(entry.getValue().isEventDuplicatedInCluster()) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
+    }
+*/
+    public boolean isStartPolling() {
+        return startPolling;
+    }
 }

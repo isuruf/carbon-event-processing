@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -15,33 +15,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.event.processor.core;
 
-import java.io.Serializable;
+package org.wso2.carbon.event.processor.management.internal.config;
 
-public class CEPMembership implements Serializable {
 
-    String host;
-    int port;
+import org.wso2.carbon.event.processor.common.config.Mode;
 
-    public CEPMembership(String host, int port) {
-        this.host = host;
-        this.port = port;
+public class SingleNodeConfiguration implements EventProcessingManagementConfiguration {
+
+    private String persistenceClass;
+
+    public String getPersistenceClass() {
+        return persistenceClass;
     }
 
-    public String getHost() {
-        return host;
+    public void setPersistenceClass(String persistenceClass) {
+        this.persistenceClass = persistenceClass;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
+    @Override
+    public Mode getMode() {
+        return Mode.SingleNode;
     }
 }

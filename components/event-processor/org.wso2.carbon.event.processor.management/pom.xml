@@ -57,7 +57,7 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.event-processing</groupId>
-            <artifactId>org.wso2.carbon.event.input.adapter.core</artifactId>
+            <artifactId>org.wso2.carbon.event.receiver.core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.analytics-common</groupId>

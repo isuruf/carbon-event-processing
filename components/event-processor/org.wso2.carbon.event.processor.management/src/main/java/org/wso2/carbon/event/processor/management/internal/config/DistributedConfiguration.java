@@ -16,33 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.input.adapter.core.internal.management;
+package org.wso2.carbon.event.processor.management.internal.config;
 
-import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
-
-public class InputEventDispatcher extends AbstractInputEventDispatcher {
-
-    public InputEventDispatcher(InputEventAdapterSubscription inputEventAdapterSubscription) {
-        super(inputEventAdapterSubscription);
-    }
-
-    @Override
-    public void onEvent(Object object) {
-        inputEventAdapterSubscription.onEvent(object);
-    }
-
-    @Override
-    public void shutdown() {
-
-    }
-
-    @Override
-    public byte[] getState() {
-        return null;
-    }
-
-    @Override
-    public void syncState(byte[] bytes) {
-
-    }
+/**
+ * Created by isuru on 3/28/15.
+ */
+public class DistributedConfiguration {
 }

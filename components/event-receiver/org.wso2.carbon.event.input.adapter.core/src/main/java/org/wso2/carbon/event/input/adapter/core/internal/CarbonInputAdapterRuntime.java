@@ -18,12 +18,14 @@ package org.wso2.carbon.event.input.adapter.core.internal;
 import com.hazelcast.core.ILock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.event.input.adapter.core.InputAdapterRuntime;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapter;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterListener;
+import org.wso2.carbon.event.input.adapter.core.InputEventAdapterSubscription;
 import org.wso2.carbon.event.input.adapter.core.exception.ConnectionUnavailableException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterException;
 import org.wso2.carbon.event.input.adapter.core.exception.InputEventAdapterRuntimeException;
-import org.wso2.carbon.event.input.adapter.core.internal.management.AbstractInputEventDispatcher;
+import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterServiceValueHolder;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,42 +33,42 @@ import java.util.concurrent.Executors;
 /**
  * Created on 2/27/15.
  */
-public class InputAdapterRuntime implements InputEventAdapterListener {
-    private static Log log = LogFactory.getLog(InputAdapterRuntime.class);
+public class CarbonInputAdapterRuntime implements InputEventAdapterListener, InputAdapterRuntime {
+    private static Log log = LogFactory.getLog(CarbonInputAdapterRuntime.class);
     private InputEventAdapter inputEventAdapter;
     private String name;
-    private AbstractInputEventDispatcher abstractInputEventDispatcher;
+    private InputEventAdapterSubscription inputEventAdapterSubscription;
     private volatile boolean connected = false;
+    private boolean start = false;
     private DecayTimer timer = new DecayTimer();
     private volatile long nextConnectionTime;
     private ExecutorService executorService;
     private ILock lock;
 
-    public InputAdapterRuntime(InputEventAdapter inputEventAdapter, String name,
-                               AbstractInputEventDispatcher abstractInputEventDispatcher) throws InputEventAdapterException {
+    public CarbonInputAdapterRuntime(InputEventAdapter inputEventAdapter, String name,
+                                     InputEventAdapterSubscription inputEventAdapterSubscription) throws InputEventAdapterException {
         this.inputEventAdapter = inputEventAdapter;
         this.name = name;
-        this.abstractInputEventDispatcher = abstractInputEventDispatcher;
+        this.inputEventAdapterSubscription = inputEventAdapterSubscription;
         executorService = Executors.newSingleThreadExecutor();
         synchronized (this) {
             inputEventAdapter.init(this);
         }
     }
 
-    public void setLock(ILock lock) {
-        this.lock = lock;
-    }
-
-    public boolean tryStart() {
-        if(lock == null || lock.tryLock()) {
+    public void startPolling() {
+        if (!connected && start && isPolling() &&
+                InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService().isStartPolling()) {
             start();
         }
-        return connected;
     }
 
+    @Override
     public void start() {
         try {
-            if (!connected) {
+            start = true;
+            if (!connected && (!isPolling()
+                    || InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService().isStartPolling())) {
                 inputEventAdapter.connect();
                 connected = true;
             }
@@ -79,6 +81,7 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
         }
     }
 
+    @Override
     public void destroy() {
         if (inputEventAdapter != null) {
             try {
@@ -96,7 +99,7 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
      */
     @Override
     public void onEvent(Object object) {
-        abstractInputEventDispatcher.onEvent(object);
+        inputEventAdapterSubscription.onEvent(object);
     }
 
     @Override
@@ -142,15 +145,17 @@ public class InputAdapterRuntime implements InputEventAdapterListener {
 
     }
 
-    public boolean duplicateEvents() {
-        return inputEventAdapter.duplicateEvents();
+    @Override
+    public boolean isEventDuplicatedInCluster() {
+        return inputEventAdapter.isEventDuplicatedInCluster();
+    }
+
+    @Override
+    public boolean isPolling() {
+        return inputEventAdapter.isPolling();
     }
 
     public String getName() {
         return name;
-    }
-
-    public AbstractInputEventDispatcher getInputEventDispatcher() {
-        return abstractInputEventDispatcher;
     }
 }

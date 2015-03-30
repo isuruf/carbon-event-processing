@@ -73,7 +73,7 @@ public final class HTTPEventAdapter implements InputEventAdapter {
     }
 
     @Override
-    public boolean duplicateEvents() {
+    public boolean isEventDuplicatedInCluster() {
         return false;
     }
 

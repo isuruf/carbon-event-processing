@@ -18,15 +18,13 @@
 
 package org.wso2.carbon.event.processor.management.internal.config;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.log4j.Logger;
-import org.wso2.carbon.databridge.core.exception.DataBridgeConfigurationException;
+import org.wso2.carbon.event.processor.common.config.ConfigurationConstants;
+import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
 import org.wso2.carbon.event.processor.common.util.Utils;
-import org.wso2.carbon.event.processor.core.exception.ExecutionPlanConfigurationException;
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
-import org.wso2.carbon.event.processor.management.config.HAConfiguration;
-import org.wso2.carbon.event.processor.management.config.SingleNodeConfiguration;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ServerConstants;
 
@@ -40,7 +38,7 @@ import java.net.SocketException;
 public class ManagementConfigurationBuilder {
     private static Logger log = Logger.getLogger(ManagementConfigurationBuilder.class);
 
-    public static OMElement loadConfigXML() throws ExecutionPlanConfigurationException {
+    public static OMElement loadConfigXML() throws ManagementConfigurationException {
 
         String carbonHome = System.getProperty(ServerConstants.CARBON_CONFIG_DIR_PATH);
         String path = carbonHome + File.separator + ConfigurationConstants.CEP_MANAGEMENT_XML;
@@ -58,12 +56,12 @@ public class ManagementConfigurationBuilder {
             String errorMessage = ConfigurationConstants.CEP_MANAGEMENT_XML
                     + "cannot be found in the path : " + path;
             log.error(errorMessage, e);
-            throw new ExecutionPlanConfigurationException(errorMessage, e);
+            throw new ManagementConfigurationException(errorMessage, e);
         } catch (XMLStreamException e) {
             String errorMessage = "Invalid XML for " + ConfigurationConstants.CEP_MANAGEMENT_XML
                     + " located in the path : " + path;
             log.error(errorMessage, e);
-            throw new ExecutionPlanConfigurationException(errorMessage, e);
+            throw new ManagementConfigurationException(errorMessage, e);
         } finally {
             try {
                 if (inputStream != null) {
@@ -76,20 +74,13 @@ public class ManagementConfigurationBuilder {
         }
     }
 
-    public static EventProcessingManagementConfiguration getConfiguration() {
-        OMElement omElement;
-        try {
-            omElement = loadConfigXML();
-        } catch (ExecutionPlanConfigurationException e) {
-            log.error(e);
-            return null;
-        }
+    public static EventProcessingManagementConfiguration getConfiguration() throws ManagementConfigurationException {
+        OMElement omElement = loadConfigXML();
         String mode;
         OMElement processing = omElement.getFirstChildWithName(
                 new QName(ConfigurationConstants.PROCESSING_ELEMENT));
         if (processing == null) {
-            log.error("Invalid XML");
-            return null;
+            throw new ManagementConfigurationException("Invalid XML. No element with name " + ConfigurationConstants.PROCESSING_ELEMENT + " found.");
         }
         mode = processing.getAttribute(new QName(ConfigurationConstants.PROCESSING_MODE_ATTRIBUTE))
                 .getAttributeValue();
@@ -119,6 +110,26 @@ public class ManagementConfigurationBuilder {
         String className = persistence.getAttribute(
                 new QName(ConfigurationConstants.SN_PERSISTENCE_CLASS_ATTRIBUTE)).getAttributeValue();
         singleNodeConfiguration.setPersistenceClass(className);
+    }
+
+    private static HAConfiguration distributedConfig(OMElement processing) {
+        isReceiver = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_RECEIVER_ELEMENT, nodeConfig);
+        isPublisher = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_PUBLISHER_ELEMENT, nodeConfig);
+        isManager = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_MANAGER_ELEMENT, nodeConfig);
+    }
+
+    private Boolean nodeType(String elementName, OMElement element) throws ManagementConfigurationException {
+        element = element.getFirstChildWithName(new QName(elementName));
+        if (element != null) {
+            OMAttribute attribute = element.getAttribute(new QName(ConfigurationConstants.PROCESSING_MODE_ATTRIBUTE));
+            if (attribute != null) {
+                return attribute.getAttributeValue().equalsIgnoreCase("True");
+            } else {
+                throw new ManagementConfigurationException("Invalid XML. No attribute with name " + ConfigurationConstants.PROCESSING_MODE_ATTRIBUTE + " found.");
+            }
+        } else {
+            throw new ManagementConfigurationException("Invalid XML. No element with name " + elementName + " found.");
+        }
     }
 
     private static HAConfiguration haConfig(OMElement processing) {
@@ -182,7 +193,7 @@ public class ManagementConfigurationBuilder {
                 && !reconnectionInterval.getText().trim().equals("")) {
             try {
                 return Integer.parseInt(reconnectionInterval.getText().trim());
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 interval = ConfigurationConstants.HA_DEFAULT_RECONNECTION_INTERVAL;
                 log.warn("Invalid reconnection interval for HA configuration. Using default: " + interval, e);
             }

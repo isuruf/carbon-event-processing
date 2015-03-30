@@ -33,6 +33,7 @@ import org.wso2.carbon.event.processor.common.storm.manager.service.StormManager
 import org.wso2.carbon.event.processor.common.transport.server.StreamCallback;
 import org.wso2.carbon.event.processor.common.transport.server.TCPEventServer;
 import org.wso2.carbon.event.processor.common.transport.server.TCPEventServerConfig;
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.processor.common.util.Utils;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 import org.wso2.siddhi.query.compiler.SiddhiCompiler;
@@ -239,7 +240,7 @@ public class EventReceiverSpout extends BaseRichSpout implements StreamCallback 
 
         private boolean registerStormReceiverWithStormMangerService() {
             TTransport transport = null;
-            for (StormDeploymentConfig.HostAndPort endpoint : stormDeploymentConfig.getManagers()) {
+            for (HostAndPort endpoint : stormDeploymentConfig.getManagers()) {
                 try {
                     transport = new TSocket(endpoint.getHostName(), endpoint.getPort());
                     TProtocol protocol = new TBinaryProtocol(transport);

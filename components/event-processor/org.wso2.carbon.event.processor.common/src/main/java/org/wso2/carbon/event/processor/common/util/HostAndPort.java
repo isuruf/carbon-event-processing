@@ -16,10 +16,25 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal;
+package org.wso2.carbon.event.processor.common.util;
 
-import org.wso2.carbon.event.processor.common.util.HostAndPort;
+import java.io.Serializable;
 
-public interface ManagementServiceClient {
-    public byte[] getSnapshot(HostAndPort activeMember);
+public class HostAndPort implements Serializable {
+
+    private String hostName;
+    private int port;
+
+    public HostAndPort(String hostName, int port) {
+        this.hostName = hostName;
+        this.port = port;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public int getPort() {
+        return port;
+    }
 }

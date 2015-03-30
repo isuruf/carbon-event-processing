@@ -37,17 +37,17 @@ public class AsyncEventPublisher implements EventHandler<AsynchronousEventBuffer
     private String executionPlanName;
     private int tenantId;
     private String thisHostIp;
-    private List<StormDeploymentConfig.HostAndPort> managerServiceEndpoints;
+    private List<HostAndPort> managerServiceEndpoints;
     private StormDeploymentConfig stormDeploymentConfig;
 
     private TCPEventPublisher tcpEventPublisher = null;
     private EndpointConnectionCreator endpointConnectionCreator;
-    private AsynchronousEventBuffer eventSendBuffer = new AsynchronousEventBuffer<Object[]>(1024, this);
+    private AsynchronousEventBuffer<Object[]> eventSendBuffer = new AsynchronousEventBuffer<Object[]>(1024, this);
 
     private boolean shutdown = false;
 
     public AsyncEventPublisher(DestinationType destinationType, Set<StreamDefinition> streams,
-                               List<StormDeploymentConfig.HostAndPort> managerServiceEndpoints,
+                               List<HostAndPort> managerServiceEndpoints,
                                String executionPlanName, int tenantId, StormDeploymentConfig stormDeploymentConfig){
         this.destinationType = destinationType;
         this.streams = streams;
@@ -175,7 +175,7 @@ public class AsyncEventPublisher implements EventHandler<AsynchronousEventBuffer
         public String getEndpointFromManagerService() {
             String endpointHostPort = null;
             do {
-                for (StormDeploymentConfig.HostAndPort endpoint : managerServiceEndpoints) {
+                for (HostAndPort endpoint : managerServiceEndpoints) {
                     TTransport transport = null;
                     try {
                         transport = new TSocket(endpoint.getHostName(), endpoint.getPort());

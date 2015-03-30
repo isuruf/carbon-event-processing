@@ -16,10 +16,11 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal;
+package org.wso2.carbon.event.input.adapter.core;
 
-import org.wso2.carbon.event.processor.common.util.HostAndPort;
-
-public interface ManagementServiceClient {
-    public byte[] getSnapshot(HostAndPort activeMember);
+public interface InputAdapterRuntime {
+    public void start();
+    public void destroy();
+    public boolean isPolling();
+    public boolean isEventDuplicatedInCluster();
 }

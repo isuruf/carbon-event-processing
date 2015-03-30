@@ -16,10 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal;
+package org.wso2.carbon.event.processor.management.internal.config;
 
-import org.wso2.carbon.event.processor.common.util.HostAndPort;
+import org.wso2.carbon.event.processor.common.config.Mode;
 
-public interface ManagementServiceClient {
-    public byte[] getSnapshot(HostAndPort activeMember);
+public interface EventProcessingManagementConfiguration {
+    public Mode getMode();
 }

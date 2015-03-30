@@ -20,21 +20,19 @@ package org.wso2.carbon.event.processor.management.internal;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.log4j.Logger;
-import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
-import org.wso2.carbon.event.processor.management.config.HAConfiguration;
+import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
+import org.wso2.carbon.event.processor.common.config.Mode;
+import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
+import org.wso2.carbon.event.processor.management.internal.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.config.ManagementConfigurationBuilder;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
+import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class EventProcessingManager {
-
-    public enum Mode {
-        SingleNode, HA, Distributed
-    }
 
     private static Logger log = Logger.getLogger(EventProcessingManager.class);
 
@@ -44,7 +42,11 @@ public class EventProcessingManager {
     private EventProcessingManagementConfiguration eventProcessingManagementConfiguration;
 
     public EventProcessingManager() {
-        eventProcessingManagementConfiguration = ManagementConfigurationBuilder.getConfiguration();
+        try {
+            eventProcessingManagementConfiguration = ManagementConfigurationBuilder.getConfiguration();
+        } catch (ManagementConfigurationException e) {
+            //TODO
+        }
         if (eventProcessingManagementConfiguration != null) {
             mode = eventProcessingManagementConfiguration.getMode();
         }
@@ -54,7 +56,7 @@ public class EventProcessingManager {
         if (mode == Mode.HA) {
             HAConfiguration haConfiguration = (HAConfiguration) eventProcessingManagementConfiguration;
             haManager = new HAManager(EventProcessingManagementValueHolder.getHazelcastInstance(),
-                    haConfiguration, readWriteLock);
+                    haConfiguration, readWriteLock.writeLock(), this);
         } else if (mode == Mode.SingleNode) {
             log.warn("CEP started with clustering enabled, but SingleNode configuration given.");
         } else {
@@ -64,10 +66,6 @@ public class EventProcessingManager {
         if (haManager != null) {
             haManager.init();
         }
-    }
-
-    public CEPMembership getCurrentCEPMembershipInfo() {
-        return EventProcessingManagementValueHolder.getCurrentCEPMembershipInfo();
     }
 
     public EventProcessingManagementConfiguration getConfiguration() {
@@ -80,9 +78,20 @@ public class EventProcessingManager {
         }
     }
 
-
     public byte[] getState() {
-        //Stop receivers etc.
-        return EventProcessingManagementValueHolder.getEventProcessorManagementService().getState();
+        if (mode == Mode.HA) {
+            return haManager.getState();
+        }
+        return null;
+    }
+
+
+    public EventProcessorManagementService getEventProcessorManagementService() {
+        return EventProcessingManagementValueHolder.getEventProcessorManagementService();
+    }
+
+
+    public EventReceiverManagementService getEventReceiverManagementService() {
+        return EventProcessingManagementValueHolder.getEventReceiverManagementService();
     }
 }

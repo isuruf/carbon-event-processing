@@ -25,7 +25,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
-import org.wso2.carbon.event.processor.core.CEPMembership;
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.processor.management.internal.ManagementServiceClient;
 import org.wso2.carbon.event.processor.management.internal.thrift.exception.InternalServerException;
 import org.wso2.carbon.event.processor.management.internal.thrift.service.ManagementService;
@@ -35,20 +35,20 @@ public class ManagementServiceClientThriftImpl implements ManagementServiceClien
     private static final Log log = LogFactory.getLog(ManagementServiceClientThriftImpl.class);
 
     @Override
-    public byte[] getSnapshot(CEPMembership activeMember) {
+    public byte[] getSnapshot(HostAndPort activeMember) {
 
         TTransport receiverTransport = null;
-        receiverTransport = new TSocket((activeMember.getHost()), activeMember.getPort());
+        receiverTransport = new TSocket((activeMember.getHostName()), activeMember.getPort());
         TProtocol protocol = new TBinaryProtocol(receiverTransport);
         ManagementService.Client client = new ManagementService.Client(protocol);
         try {
             receiverTransport.open();
         } catch (TTransportException e) {
-            throw new RuntimeException("Error in connecting to " + activeMember.getHost() + ":" + activeMember.getPort());
+            throw new RuntimeException("Error in connecting to " + activeMember.getHostName() + ":" + activeMember.getPort());
         }
 
         try {
-            log.info("Requesting snapshot from " + activeMember.getHost() + ":" + activeMember.getPort());
+            log.info("Requesting snapshot from " + activeMember.getHostName() + ":" + activeMember.getPort());
 
             org.wso2.carbon.event.processor.management.internal.thrift.data.SnapshotData snapshotDataIn = client.takeSnapshot();
             log.info("Snapshot received.");
@@ -56,9 +56,9 @@ public class ManagementServiceClientThriftImpl implements ManagementServiceClien
             return snapshotDataIn.getState();
 
         } catch (InternalServerException e) {
-            throw new RuntimeException("Internal server error occurred at CEP member :" + activeMember.getHost() + ":" + activeMember.getPort() + ", " + e.getMessage());
+            throw new RuntimeException("Internal server error occurred at CEP member :" + activeMember.getHostName() + ":" + activeMember.getPort() + ", " + e.getMessage());
         } catch (TException e) {
-            throw new RuntimeException("Thrift error occurred when communicating to CEP member :" + activeMember.getHost() + ":" + activeMember.getPort() + ", " + e.getMessage());
+            throw new RuntimeException("Thrift error occurred when communicating to CEP member :" + activeMember.getHostName() + ":" + activeMember.getPort() + ", " + e.getMessage());
         }
     }
 }

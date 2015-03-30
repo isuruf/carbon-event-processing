@@ -20,8 +20,10 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterService;
 import org.wso2.carbon.event.receiver.core.EventReceiverService;
+import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.exception.EventReceiverConfigurationException;
 import org.wso2.carbon.event.receiver.core.internal.CarbonEventReceiverService;
+import org.wso2.carbon.event.receiver.core.internal.CarbonEventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.internal.EventStreamListenerImpl;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
 import org.wso2.carbon.event.stream.core.EventStreamListener;
@@ -70,6 +72,11 @@ public class EventReceiverServiceDS {
 
             activateInactiveEventReceiverConfigurations(carbonEventReceiverService);
             context.getBundleContext().registerService(EventStreamListener.class.getName(), new EventStreamListenerImpl(), null);
+
+            CarbonEventReceiverManagementService inputEventAdapterManagementService = new CarbonEventReceiverManagementService();
+            EventReceiverServiceValueHolder.setCarbonEventReceiverManagementService(inputEventAdapterManagementService);
+            context.getBundleContext().registerService(EventReceiverManagementService.class.getName(), inputEventAdapterManagementService, null);
+
         } catch (RuntimeException e) {
             log.error("Could not create EventReceiverService or EventReceiver : " + e.getMessage(), e);
         }

@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.event.input.adapter.core.internal.management;
+package org.wso2.carbon.event.receiver.core.internal.management;
 
 import org.apache.log4j.Logger;
 

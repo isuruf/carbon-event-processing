@@ -20,46 +20,51 @@ package org.wso2.carbon.event.processor.management.internal;
 import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.event.processor.core.CEPMembership;
-import org.wso2.carbon.event.processor.management.config.HAConfiguration;
+import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
 import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceClientThriftImpl;
 import org.wso2.carbon.event.processor.management.internal.util.Constants;
+import org.wso2.carbon.event.receiver.core.internal.management.ByteSerializer;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.Lock;
+
 
 public class HAManager {
     private static final Log log = LogFactory.getLog(HAManager.class);
 
     private final HazelcastInstance hazelcastInstance;
+    private HAConfiguration haConfiguration;
     private boolean activeLockAcquired;
     private boolean passiveLockAcquired;
     private ILock activeLock;
     private ILock passiveLock;
-    private IMap<CEPMembership, Boolean> members;
-    private IMap<String, CEPMembership> roleToMembershipMap;
+    private IMap<HAConfiguration, Boolean> members;
+    private IMap<String, HAConfiguration> roleToMembershipMap;
 
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-    private ReadWriteLock readWriteLock;
+    private Lock writeLock;
     private Future stateChanger = null;
-    private static String activeId;
-    private static String passiveId;
-
+    private String activeId;
+    private String passiveId;
+    private EventProcessingManager eventProcessingManager;
 
     public HAManager(HazelcastInstance hazelcastInstance, HAConfiguration haConfiguration,
-                     ReadWriteLock readWriteLock) {
+                     Lock writeLock, EventProcessingManager eventProcessingManager) {
         this.hazelcastInstance = hazelcastInstance;
-        this.readWriteLock = readWriteLock;
+        this.writeLock = writeLock;
+        this.haConfiguration = haConfiguration;
         activeId = Constants.ACTIVEID;
         passiveId = Constants.PASSIVEID;
         activeLock = hazelcastInstance.getLock(activeId);
         passiveLock = hazelcastInstance.getLock(passiveId);
 
         members = hazelcastInstance.getMap(Constants.MEMBERS);
-        members.put(EventProcessingManagementValueHolder.getCurrentCEPMembershipInfo(), true);
+        members.put(haConfiguration, true);
+        this.eventProcessingManager = eventProcessingManager;
 
         hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
             @Override
@@ -81,15 +86,14 @@ public class HAManager {
         });
 
         roleToMembershipMap = hazelcastInstance.getMap(Constants.ROLE_MEMBERSHIP_MAP);
-        roleToMembershipMap.addEntryListener(new EntryAdapter<String, CEPMembership>() {
+        roleToMembershipMap.addEntryListener(new EntryAdapter<String, HAConfiguration>() {
 
             @Override
-            public void entryRemoved(EntryEvent<String, CEPMembership> stringCEPMembershipEntryEvent) {
+            public void entryRemoved(EntryEvent<String, HAConfiguration> stringCEPMembershipEntryEvent) {
                 tryChangeState();
             }
 
         }, activeId, false);
-
 
     }
 
@@ -118,26 +122,57 @@ public class HAManager {
             }
         }
     }
+
     private void becomePassive() {
-        roleToMembershipMap.put(passiveId, EventProcessingManagementValueHolder.getCurrentCEPMembershipInfo());
+        roleToMembershipMap.put(passiveId, haConfiguration);
 
-        try {
-            readWriteLock.writeLock().tryLock(20000, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.error("Error in getting lock.", e);
-        }
 
-        CEPMembership activeMember = roleToMembershipMap.get(activeId);
-        EventProcessingManager eventProcessingManager = EventProcessingManagementValueHolder.getEventProcessingManager();
+        HAConfiguration activeMember = roleToMembershipMap.get(activeId);
+        // Send non-duplicate events to active member
+        eventProcessingManager.getEventReceiverManagementService().setOtherMember(activeMember.getTransport());
+        eventProcessingManager.getEventReceiverManagementService().start();
 
+        eventProcessingManager.getEventReceiverManagementService().pause();
+        eventProcessingManager.getEventProcessorManagementService().pause();
         ManagementServiceClient client = new ManagementServiceClientThriftImpl();
-        byte[] state = client.getSnapshot(activeMember);
-        readWriteLock.writeLock().unlock();
+        byte[] state = client.getSnapshot(activeMember.getManagement());
+        ArrayList<byte[]> stateList = (ArrayList<byte[]>) ByteSerializer.BToO(state);
+
+        // Synchronize the duplicate events with active member
+        eventProcessingManager.getEventReceiverManagementService().syncState(stateList.get(1));
+
+        eventProcessingManager.getEventProcessorManagementService().restoreState(stateList.get(0));
+        eventProcessingManager.getEventProcessorManagementService().resume();
+        eventProcessingManager.getEventReceiverManagementService().resume();
+
+        writeLock.unlock();
     }
 
     private void becomeActive() {
         EventProcessingManager eventProcessingManager = EventProcessingManagementValueHolder.getEventProcessingManager();
+        eventProcessingManager.getEventReceiverManagementService().start();
+    }
 
+    public byte[] getState() {
+        eventProcessingManager.getEventReceiverManagementService().pause();
+        eventProcessingManager.getEventProcessorManagementService().pause();
+
+        HAConfiguration passiveMember = roleToMembershipMap.get(passiveId);
+        eventProcessingManager.getEventReceiverManagementService().setOtherMember(passiveMember.getTransport());
+
+        byte[] processorState = eventProcessingManager.getEventProcessorManagementService().getState();
+        byte[] receiverState = eventProcessingManager.getEventReceiverManagementService().getState();
+
+        ArrayList<byte[]> stateList = new ArrayList<byte[]>(2);
+        stateList.add(processorState);
+        stateList.add(receiverState);
+
+        byte[] state = ByteSerializer.OToB(stateList);
+
+        eventProcessingManager.getEventProcessorManagementService().resume();
+        eventProcessingManager.getEventReceiverManagementService().resume();
+
+        return state;
     }
 
     public void shutdown() {

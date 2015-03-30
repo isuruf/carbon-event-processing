@@ -31,7 +31,9 @@ public interface InputEventAdapter {
 
     void disconnect();
 
-    boolean duplicateEvents();
+    boolean isEventDuplicatedInCluster();
+
+    boolean isPolling();
 
     void destroy();
 

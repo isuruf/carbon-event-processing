@@ -17,6 +17,8 @@
 */
 package org.wso2.carbon.event.processor.common.storm.config;
 
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,25 +142,6 @@ public class StormDeploymentConfig implements Serializable {
 
     public String getJar() {
         return jar;
-    }
-
-    public class HostAndPort implements Serializable{
-
-        private String hostName;
-        private int port;
-
-        public HostAndPort(String hostName, int port) {
-            this.hostName = hostName;
-            this.port = port;
-        }
-
-        public String getHostName() {
-            return hostName;
-        }
-
-        public int getPort() {
-            return port;
-        }
     }
 
     public int getPublisherBoltParallelism() {

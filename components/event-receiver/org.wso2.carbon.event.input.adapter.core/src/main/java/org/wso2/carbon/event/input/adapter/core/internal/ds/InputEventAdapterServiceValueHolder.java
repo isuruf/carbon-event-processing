@@ -16,7 +16,6 @@ package org.wso2.carbon.event.input.adapter.core.internal.ds;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.wso2.carbon.event.input.adapter.core.internal.config.AdapterConfigs;
-import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterManagementService;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
 import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputEventAdapterService;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -25,7 +24,6 @@ import org.wso2.carbon.utils.ConfigurationContextService;
 public class InputEventAdapterServiceValueHolder {
 
     private static CarbonInputEventAdapterService carbonInputEventAdapterService;
-    private static CarbonInputEventAdapterManagementService carbonInputEventAdapterManagementService;
     private static RegistryService registryService;
     private static EventStatisticsService eventStatisticsService;
     private static AdapterConfigs globalAdapterConfigs;
@@ -42,14 +40,6 @@ public class InputEventAdapterServiceValueHolder {
 
     public static void setCarbonInputEventAdapterService(CarbonInputEventAdapterService carbonInputEventAdapterService) {
         InputEventAdapterServiceValueHolder.carbonInputEventAdapterService = carbonInputEventAdapterService;
-    }
-
-    public static CarbonInputEventAdapterManagementService getCarbonInputEventAdapterManagementService() {
-        return carbonInputEventAdapterManagementService;
-    }
-
-    public static void setCarbonInputEventAdapterManagementService(CarbonInputEventAdapterManagementService carbonInputEventAdapterManagementService) {
-        InputEventAdapterServiceValueHolder.carbonInputEventAdapterManagementService = carbonInputEventAdapterManagementService;
     }
 
     public static RegistryService getRegistryService() {

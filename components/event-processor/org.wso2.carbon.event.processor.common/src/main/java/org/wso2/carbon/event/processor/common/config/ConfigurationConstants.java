@@ -15,16 +15,12 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.carbon.event.processor.management.internal.config;
-
+package org.wso2.carbon.event.processor.common.config;
 
 /**
- * Agent Server Constants
+ * Configuration Constants
  */
 public final class ConfigurationConstants {
-
-    private ConfigurationConstants() {
-    }
 
     public static final String CEP_MANAGEMENT_XML = "event-processing.xml";
 
@@ -50,4 +46,11 @@ public final class ConfigurationConstants {
     public static final String SN_PERSISTENCE_CLASS_ATTRIBUTE = "class";
     public static final String SN_DEFAULT_PERSISTENCE_STORE =
             "org.wso2.carbon.event.processor.core.internal.persistence.FileSystemPersistenceStore";
+
+    public static final String PROCESSING_MODE_DISTRIBUTED = "Distributed";
+    public static final String DISTRIBUTED_NODE_CONFIG_ELEMENT = "nodeType";
+    public static final String DISTRIBUTED_NODE_CONFIG_RECEIVER_ELEMENT = "receiver";
+    public static final String DISTRIBUTED_NODE_CONFIG_PUBLISHER_ELEMENT = "publisher";
+    public static final String DISTRIBUTED_NODE_CONFIG_MANAGER_ELEMENT = "manager";
+    public static final String DISTRIBUTED_NODE_CONFIG_ENABLE_ATTRIBUTE = "enable";
 }

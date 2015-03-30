@@ -16,10 +16,8 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.config;
+package org.wso2.carbon.event.processor.common.config;
 
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager.Mode;
-
-public interface EventProcessingManagementConfiguration {
-    public Mode getMode();
+public enum Mode {
+    SingleNode, HA, Distributed
 }
