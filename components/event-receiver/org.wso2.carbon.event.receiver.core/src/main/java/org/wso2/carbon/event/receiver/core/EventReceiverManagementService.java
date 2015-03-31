@@ -45,9 +45,16 @@ public interface EventReceiverManagementService {
 
 
     /**
-     * Start the input event adapter service
+     * Start event receivers.
      */
     public void start();
 
+    /**
+     * Try to start polling event receivers
+     */
+    public void startPolling();
+
     public void setOtherMember(HostAndPort otherMember);
+
+    public void startServer(HostAndPort member);
 }

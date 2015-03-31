@@ -110,6 +110,11 @@ public final class HTTPEventAdapter implements InputEventAdapter {
     }
 
     @Override
+    public boolean isPolling() {
+        return false;
+    }
+
+    @Override
     public void destroy() {
     }
 

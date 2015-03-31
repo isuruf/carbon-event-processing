@@ -33,7 +33,7 @@ public final class ConfigurationConstants {
     public static final String RECEIVER_HOST_NAME = "hostName";
     public static final String PORT_ELEMENT = "port";
 
-    public static final String PROCESSING_MODE_HA = "ha";
+    public static final String PROCESSING_MODE_HA = "HA";
     public static final String HA_TRANSPORT_ELEMENT = "transport";
     public static final String HA_MANAGEMENT_ELEMENT = "management";
     public static final String HA_RECONNECTION_INTERVAL_ELEMENT = "reconnectionInterval";

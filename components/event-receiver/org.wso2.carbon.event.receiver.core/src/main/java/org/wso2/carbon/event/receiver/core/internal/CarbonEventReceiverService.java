@@ -22,9 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
 import org.wso2.carbon.event.input.adapter.core.EventAdapterUtil;
+import org.wso2.carbon.event.input.adapter.core.InputAdapterRuntime;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterService;
-import org.wso2.carbon.event.input.adapter.core.internal.CarbonInputAdapterRuntime;
-import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
 import org.wso2.carbon.event.processor.common.config.ManagementInfo;
 import org.wso2.carbon.event.receiver.core.EventReceiverService;
 import org.wso2.carbon.event.receiver.core.config.EventReceiverConfiguration;
@@ -53,17 +52,18 @@ public class CarbonEventReceiverService implements EventReceiverService {
     private static final Log log = LogFactory.getLog(CarbonEventReceiverService.class);
     private Map<Integer, Map<String, EventReceiver>> tenantSpecificEventReceiverMap;
     private Map<Integer, List<EventReceiverConfigurationFile>> tenantSpecificEventReceiverConfigurationFileMap;
+    private boolean started = false;
+    private boolean startedPolling = false;
 
     private ManagementInfo managementInfo;
 
     public CarbonEventReceiverService() {
         tenantSpecificEventReceiverMap = new ConcurrentHashMap<Integer, Map<String, EventReceiver>>();
         tenantSpecificEventReceiverConfigurationFileMap = new ConcurrentHashMap<Integer, List<EventReceiverConfigurationFile>>();
-        try {
-            managementInfo = new ManagementInfo();
-        } catch (ManagementConfigurationException e) {
-            log.error(e);
-        }
+    }
+
+    public void setManagementInfo(ManagementInfo managementInfo) {
+        this.managementInfo = managementInfo;
     }
 
     @Override
@@ -326,7 +326,7 @@ public class CarbonEventReceiverService implements EventReceiverService {
 
         // End; Checking preconditions to add the event receiver
         EventReceiver eventReceiver = new EventReceiver(eventReceiverConfiguration, exportedStreamDefinition,
-                managementInfo.getMode());
+                managementInfo.getMode(), started, startedPolling);
 
         try {
             EventReceiverServiceValueHolder.getEventStreamService().subscribe(eventReceiver);
@@ -596,15 +596,12 @@ public class CarbonEventReceiverService implements EventReceiverService {
 
     }
 
-    public Collection<Integer> getTenants() {
-        return tenantSpecificEventReceiverMap.keySet();
-    }
-
     public Map<Integer, Map<String, EventReceiver>> getTenantSpecificEventReceiverMap() {
         return tenantSpecificEventReceiverMap;
     }
 
     public void startInputAdapterRuntimes() {
+        started = true;
         Map<String, EventReceiver> map;
         int tenantId;
         for (Map.Entry<Integer, Map<String, EventReceiver>> pair : tenantSpecificEventReceiverMap.entrySet()) {
@@ -623,6 +620,35 @@ public class CarbonEventReceiverService implements EventReceiverService {
                 PrivilegedCarbonContext.endTenantFlow();
             }
         }
+    }
+
+    public void startPollingInputAdapterRuntimes() {
+        EventReceiverServiceValueHolder.getInputEventAdapterService().setStartPolling(true);
+        Map<String, EventReceiver> map;
+        int tenantId;
+        for (Map.Entry<Integer, Map<String, EventReceiver>> pair : tenantSpecificEventReceiverMap.entrySet()) {
+            map = pair.getValue();
+            tenantId = pair.getKey();
+            try {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
+                for (EventReceiver eventReceiver : map.values()) {
+                    eventReceiver.getInputAdapterRuntime().startPolling();
+                }
+            } catch (Exception e) {
+                log.error("Unable to start event adpaters for tenant :" + tenantId, e);
+            } finally {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
+        }
+    }
+
+    public EventReceiver getEventReceiver(int tenantId, String eventReceiverName) {
+        if(tenantSpecificEventReceiverMap.containsKey(tenantId)) {
+            return tenantSpecificEventReceiverMap.get(tenantId).get(eventReceiverName);
+        }
+        return null;
     }
 
     //

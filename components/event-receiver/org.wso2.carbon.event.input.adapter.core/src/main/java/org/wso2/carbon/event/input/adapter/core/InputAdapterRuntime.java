@@ -20,6 +20,7 @@ package org.wso2.carbon.event.input.adapter.core;
 
 public interface InputAdapterRuntime {
     public void start();
+    public void startPolling();
     public void destroy();
     public boolean isPolling();
     public boolean isEventDuplicatedInCluster();

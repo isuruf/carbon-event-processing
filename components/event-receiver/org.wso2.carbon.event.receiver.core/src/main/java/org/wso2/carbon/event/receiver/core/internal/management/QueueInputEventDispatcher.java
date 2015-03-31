@@ -19,6 +19,7 @@
 package org.wso2.carbon.event.receiver.core.internal.management;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
 
 import java.util.Arrays;
@@ -31,8 +32,10 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
     private final BlockingQueue<Object[]> eventQueue = new LinkedBlockingQueue<Object[]>();
     private Lock readLock;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private String eventReceiverName;
+    private int tenantId;
 
-    public QueueInputEventDispatcher(Lock readLock) {
+    public QueueInputEventDispatcher(int tenantId, String eventReceiverName, Lock readLock) {
         this.readLock = readLock;
         executorService.submit(new QueueInputEventDispatcherWorker());
     }
@@ -62,7 +65,7 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
 
     @Override
     public void syncState(byte[] bytes) {
-        Object[] events = (Object[])ByteSerializer.BToO(bytes);
+        Object[] events = (Object[]) ByteSerializer.BToO(bytes);
         for(Object object: events) {
             if(Arrays.deepEquals((Object[]) object, eventQueue.peek())) {
                 eventQueue.poll();
@@ -96,7 +99,7 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
                         callBack.sendEventData(event);
                     }
                     if(isSendToOther()) {
-                        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().sendToOther(streamId, event);
+                        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().sendToOther(tenantId, eventReceiverName, event);
                     }
                 } catch (InterruptedException e) {
                     log.error("Interrupted while waiting to get an event from queue.", e);

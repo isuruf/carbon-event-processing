@@ -18,13 +18,11 @@
 
 package org.wso2.carbon.event.receiver.core.internal.management;
 
-import org.wso2.carbon.event.stream.core.EventProducerCallback;
-
 public class InputEventDispatcher extends AbstractInputEventDispatcher {
 
     @Override
     public void onEvent(Object[] object) {
-        if(!isDrop()) {
+        if (!isDrop()) {
             callBack.sendEventData(object);
         }
     }

@@ -65,7 +65,13 @@ public class EventReceiverServiceDS {
         try {
             CarbonEventReceiverService carbonEventReceiverService = new CarbonEventReceiverService();
             EventReceiverServiceValueHolder.registerEventReceiverService(carbonEventReceiverService);
+
+            CarbonEventReceiverManagementService eventReceiverManagementService = new CarbonEventReceiverManagementService();
+            EventReceiverServiceValueHolder.setCarbonEventReceiverManagementService(eventReceiverManagementService);
+
             context.getBundleContext().registerService(EventReceiverService.class.getName(), carbonEventReceiverService, null);
+            context.getBundleContext().registerService(EventReceiverManagementService.class.getName(), eventReceiverManagementService, null);
+
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed EventReceiverService.");
             }
@@ -73,13 +79,13 @@ public class EventReceiverServiceDS {
             activateInactiveEventReceiverConfigurations(carbonEventReceiverService);
             context.getBundleContext().registerService(EventStreamListener.class.getName(), new EventStreamListenerImpl(), null);
 
-            CarbonEventReceiverManagementService inputEventAdapterManagementService = new CarbonEventReceiverManagementService();
-            EventReceiverServiceValueHolder.setCarbonEventReceiverManagementService(inputEventAdapterManagementService);
-            context.getBundleContext().registerService(EventReceiverManagementService.class.getName(), inputEventAdapterManagementService, null);
-
         } catch (RuntimeException e) {
             log.error("Could not create EventReceiverService or EventReceiver : " + e.getMessage(), e);
         }
+    }
+
+    protected void deactivate(ComponentContext context) {
+        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().shutdown();
     }
 
     private void activateInactiveEventReceiverConfigurations(CarbonEventReceiverService carbonEventReceiverService) {

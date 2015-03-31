@@ -221,4 +221,9 @@ public class CarbonInputEventAdapterService implements InputEventAdapterService 
     public boolean isStartPolling() {
         return startPolling;
     }
+
+    @Override
+    public void setStartPolling(boolean startPolling) {
+        this.startPolling = startPolling;
+    }
 }

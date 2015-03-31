@@ -19,9 +19,11 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterFactory;
 import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService;
+import org.wso2.carbon.event.publisher.core.EventPublisherManagementService;
 import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.publisher.core.EventStreamListenerImpl;
 import org.wso2.carbon.event.publisher.core.exception.EventPublisherConfigurationException;
+import org.wso2.carbon.event.publisher.core.internal.CarbonEventPublisherManagementService;
 import org.wso2.carbon.event.publisher.core.internal.CarbonEventPublisherService;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
 import org.wso2.carbon.event.stream.core.EventStreamListener;
@@ -64,7 +66,13 @@ public class EventPublisherServiceDS {
         try {
             CarbonEventPublisherService carbonEventPublisherService = new CarbonEventPublisherService();
             EventPublisherServiceValueHolder.registerPublisherService(carbonEventPublisherService);
+
+            CarbonEventPublisherManagementService carbonEventPublisherManagementService = new CarbonEventPublisherManagementService();
+            EventPublisherServiceValueHolder.registerPublisherManagementService(carbonEventPublisherManagementService);
+
             context.getBundleContext().registerService(EventPublisherService.class.getName(), carbonEventPublisherService, null);
+            context.getBundleContext().registerService(EventPublisherManagementService.class.getName(), carbonEventPublisherManagementService, null);
+
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed EventPublisherService");
             }

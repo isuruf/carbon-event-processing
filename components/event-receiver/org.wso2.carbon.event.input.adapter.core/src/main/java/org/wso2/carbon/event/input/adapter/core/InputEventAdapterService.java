@@ -53,4 +53,6 @@ public interface InputEventAdapterService {
     void testConnection(InputEventAdapterConfiguration inputEventAdapterConfiguration) throws InputEventAdapterException, TestConnectionNotSupportedException;
 
     void destroy(String name);
+
+    public void setStartPolling(boolean startPolling);
 }

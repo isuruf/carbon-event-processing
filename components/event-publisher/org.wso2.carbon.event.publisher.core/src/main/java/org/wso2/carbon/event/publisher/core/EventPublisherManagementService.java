@@ -16,17 +16,9 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal.util;
+package org.wso2.carbon.event.publisher.core;
 
-public class Constants {
-
-    public static final String PREFIX = "org.wso2.cep.org.wso2.carbon.event.processor.management";
-    public static final String ROLE_MEMBERSHIP_MAP = PREFIX + "role_membership_map";
-    public static final String ACTIVEID = PREFIX + "Active";
-    public static final String PASSIVEID = PREFIX + "Passive";
-    public static final String MEMBERS = PREFIX + "members";
-
-    public static final long AXIS_TIME_INTERVAL_IN_MILLISECONDS = 10000;
-
-    public static enum HAMode {Active, Passive, Backup};
+public interface EventPublisherManagementService {
+    public boolean isDrop();
+    public void setDrop(boolean isDrop);
 }

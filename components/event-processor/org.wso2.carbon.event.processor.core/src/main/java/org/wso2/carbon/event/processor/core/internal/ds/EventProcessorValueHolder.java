@@ -20,6 +20,7 @@ package org.wso2.carbon.event.processor.core.internal.ds;
 import com.hazelcast.core.HazelcastInstance;
 import org.wso2.carbon.base.api.ServerConfigurationService;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
+import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
 import org.wso2.carbon.event.processor.core.internal.storm.manager.StormManagerServer;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
@@ -34,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class EventProcessorValueHolder {
     private static CarbonEventProcessorService eventProcessorService;
+    private static CarbonEventProcessorManagementService eventProcessorManagementService;
     private static EventStatisticsService eventStatisticsService;
     private static EventStreamService eventStreamService;
     private static HazelcastInstance hazelcastInstance;
@@ -62,6 +64,14 @@ public class EventProcessorValueHolder {
 
     public static CarbonEventProcessorService getEventProcessorService() {
         return eventProcessorService;
+    }
+
+    public static void registerEventProcessorManagementService(CarbonEventProcessorManagementService service) {
+        eventProcessorManagementService = service;
+    }
+
+    public static CarbonEventProcessorManagementService getEventProcessorManagementService() {
+        return eventProcessorManagementService;
     }
 
     public static void registerEventStatisticsService(EventStatisticsService eventStatisticsService) {

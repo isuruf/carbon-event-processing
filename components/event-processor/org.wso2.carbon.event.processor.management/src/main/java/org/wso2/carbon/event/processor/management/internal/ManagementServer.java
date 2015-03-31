@@ -59,10 +59,10 @@ public class ManagementServer {
             TThreadPoolServer dataReceiverServer = new TThreadPoolServer(
                     new TThreadPoolServer.Args(serverTransport).processor(processor));
             Thread thread = new Thread(new ServerThread(dataReceiverServer));
-            log.info("CEP HA Management Thrift Server started on " + hostAndPort.getHostName() + ":" + hostAndPort.getPort());
+            log.info("CEP Management Thrift Server started on " + hostAndPort.getHostName() + ":" + hostAndPort.getPort());
             thread.start();
         } catch (TTransportException e) {
-            throw new Exception("Cannot start CEP HA Management Thrift server on port " + hostAndPort.getPort() +
+            throw new Exception("Cannot start CEP Management Thrift server on port " + hostAndPort.getPort() +
                     " on host " + hostAndPort.getHostName(), e);
         }
     }

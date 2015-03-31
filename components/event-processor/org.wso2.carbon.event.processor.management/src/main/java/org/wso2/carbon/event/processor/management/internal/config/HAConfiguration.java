@@ -20,7 +20,9 @@ package org.wso2.carbon.event.processor.management.internal.config;
 import org.wso2.carbon.event.processor.common.config.Mode;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;
 
-public class HAConfiguration implements EventProcessingManagementConfiguration {
+import java.io.Serializable;
+
+public class HAConfiguration implements EventProcessingManagementConfiguration, Serializable {
     private HostAndPort management;
     private HostAndPort transport;
     private int reconnectionInterval;

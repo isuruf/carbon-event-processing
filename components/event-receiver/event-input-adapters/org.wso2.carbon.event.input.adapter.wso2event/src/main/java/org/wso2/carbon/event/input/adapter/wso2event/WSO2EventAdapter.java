@@ -80,4 +80,14 @@ public final class WSO2EventAdapter implements InputEventAdapter {
     public InputEventAdapterListener getEventAdaptorListener() {
         return eventAdaptorListener;
     }
+
+    @Override
+    public boolean isEventDuplicatedInCluster() {
+        return false;
+    }
+
+    @Override
+    public boolean isPolling() {
+        return false;
+    }
 }

@@ -19,12 +19,16 @@
 package org.wso2.carbon.event.receiver.core.internal;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
+import org.wso2.carbon.event.processor.common.config.ManagementInfo;
 import org.wso2.carbon.event.processor.common.transport.client.TCPEventPublisher;
+import org.wso2.carbon.event.processor.common.transport.server.StreamCallback;
+import org.wso2.carbon.event.processor.common.transport.server.TCPEventServer;
+import org.wso2.carbon.event.processor.common.transport.server.TCPEventServerConfig;
+import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
-import org.wso2.carbon.event.input.adapter.core.internal.ds.InputEventAdapterServiceValueHolder;
 import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
-import org.wso2.carbon.event.receiver.core.internal.management.ByteSerializer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,6 +42,19 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
     private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private HostAndPort otherMember;
     private TCPEventPublisher tcpEventPublisher;
+    private TCPEventServer tcpEventServer;
+    private ManagementInfo managementInfo;
+
+    public CarbonEventReceiverManagementService() {
+        try {
+            managementInfo = new ManagementInfo();
+            tcpEventServer = null;
+            tcpEventPublisher = null;
+        } catch (ManagementConfigurationException e) {
+            log.error("Error while reading CEP configuration XML", e);
+        }
+        EventReceiverServiceValueHolder.getCarbonEventReceiverService().setManagementInfo(managementInfo);
+    }
 
     @Override
     public byte[] getState() {
@@ -49,8 +66,8 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
             HashMap<String, byte[]> tenantData = new HashMap<String, byte[]>();
 
             for (Map.Entry<String, EventReceiver> receiverEntry : map.entrySet()) {
-                byte[] state = receiverEntry.getValue().getInputEventDispatcher().getState();
-                if (state != null) {
+                if (receiverEntry.getValue().getInputAdapterRuntime().isEventDuplicatedInCluster()) {
+                    byte[] state = receiverEntry.getValue().getInputEventDispatcher().getState();
                     tenantData.put(receiverEntry.getKey(), state);
                 }
             }
@@ -83,12 +100,14 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
         readWriteLock.writeLock().unlock();
     }
 
-    /**
-     * Start the input event adapter service
-     */
     @Override
     public void start() {
         EventReceiverServiceValueHolder.getCarbonEventReceiverService().startInputAdapterRuntimes();
+    }
+
+    @Override
+    public void startPolling() {
+        EventReceiverServiceValueHolder.getCarbonEventReceiverService().startPollingInputAdapterRuntimes();
     }
 
     @Override
@@ -105,17 +124,51 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
         this.otherMember = otherMember;
     }
 
-    public void sendToOther(String streamId, Object[] data) {
+    public void sendToOther(int tenantId, String eventReceiverName, Object[] data) {
         if (tcpEventPublisher != null) {
             try {
-                tcpEventPublisher.sendEvent(streamId, data, true);
+                tcpEventPublisher.sendEvent(tenantId + "/" + eventReceiverName, data, true);
             } catch (IOException e) {
                 //TODO
             }
         }
     }
 
+    @Override
+    public void startServer(HostAndPort member) {
+        if (tcpEventServer == null) {
+            TCPEventServerConfig tcpEventServerConfig = new TCPEventServerConfig(member.getPort());
+            tcpEventServerConfig.setNumberOfThreads(1);
+            tcpEventServer = new TCPEventServer(tcpEventServerConfig, new StreamCallback() {
+                @Override
+                public void receive(String streamId, Object[] event) {
+                    int index = streamId.indexOf("/");
+                    if (index != -1) {
+                        int tenantId = Integer.parseInt(streamId.substring(0, index));
+                        String eventReceiverName = streamId.substring(index + 1);
+                        EventReceiver eventReceiver =
+                                EventReceiverServiceValueHolder.getCarbonEventReceiverService().getEventReceiver(tenantId, eventReceiverName);
+                        getReadLock().lock();
+                        getReadLock().unlock();
+                        eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
+                    }
+                }
+            });
+            tcpEventServer.start();
+            log.info("CEP Management TCPEventServer for EventReceiver started on port " + member.getPort());
+        }
+    }
+
     public Lock getReadLock() {
         return readWriteLock.readLock();
+    }
+
+    public void shutdown() {
+        if (tcpEventPublisher != null) {
+            tcpEventPublisher.shutdown();
+        }
+        if (tcpEventServer != null) {
+            tcpEventServer.shutdown();
+        }
     }
 }

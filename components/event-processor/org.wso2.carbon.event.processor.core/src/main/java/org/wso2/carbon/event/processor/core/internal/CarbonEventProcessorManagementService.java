@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.ExecutionPlan;
 import org.wso2.carbon.event.processor.core.internal.ds.EventProcessorValueHolder;
-import org.wso2.carbon.event.processor.core.internal.util.ByteSerializer;
+import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 
 import java.util.HashMap;
 import java.util.Map;

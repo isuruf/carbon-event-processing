@@ -42,6 +42,7 @@ import org.wso2.carbon.event.stream.core.EventProducerCallback;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 public class EventReceiver implements EventProducer {
 
@@ -60,7 +61,8 @@ public class EventReceiver implements EventProducer {
     private InputAdapterRuntime inputAdapterRuntime;
 
     public EventReceiver(EventReceiverConfiguration eventReceiverConfiguration,
-                         StreamDefinition exportedStreamDefinition, Mode mode)
+                         StreamDefinition exportedStreamDefinition, Mode mode,
+                         boolean started, boolean startedPolling)
             throws EventReceiverConfigurationException {
         this.eventReceiverConfiguration = eventReceiverConfiguration;
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
@@ -79,7 +81,6 @@ public class EventReceiver implements EventProducer {
                     EventReceiverConfigurationHelper.validateExportedStream(eventReceiverConfiguration, exportedStreamDefinition, this.inputMapper);
                 }
                 this.exportedStreamDefinition = exportedStreamDefinition;
-                this.inputEventDispatcher.setStreamId(exportedStreamDefinition.getStreamId());
             } else {
                 throw new EventReceiverConfigurationException("Could not create input mapper for mapping type "
                         + mappingType + " for event receiver :" + eventReceiverConfiguration.getEventReceiverName());
@@ -116,29 +117,29 @@ public class EventReceiver implements EventProducer {
             }
 
             if (mode == Mode.HA) {
-                inputEventDispatcher = new QueueInputEventDispatcher(EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().getReadLock());
+                Lock readLock = EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().getReadLock();
+                inputEventDispatcher = new QueueInputEventDispatcher(tenantId, eventReceiverConfiguration.getEventReceiverName(), readLock);
                 inputEventDispatcher.setSendToOther(!inputAdapterRuntime.isEventDuplicatedInCluster());
             } else if (mode == Mode.Distributed) {
                 inputEventDispatcher = new InputEventDispatcher();
                 inputEventDispatcher.setDrop(inputAdapterRuntime.isEventDuplicatedInCluster());
+                //TODO: Remove this
+                inputEventDispatcher.setDrop(false);
             } else {
                 inputEventDispatcher = new InputEventDispatcher();
             }
 
             if (mode == Mode.HA) {
-                if (inputAdapterRuntime.isEventDuplicatedInCluster()) {
+                if (started || inputAdapterRuntime.isEventDuplicatedInCluster()) {
                     inputAdapterRuntime.start();
                 }
             } else if (mode == Mode.Distributed) {
-
+                // TODO: Fix this
+                inputAdapterRuntime.start();
             } else {
                 inputAdapterRuntime.start();
             }
         }
-    }
-
-    public int getTenantId() {
-        return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
     }
 
     /**

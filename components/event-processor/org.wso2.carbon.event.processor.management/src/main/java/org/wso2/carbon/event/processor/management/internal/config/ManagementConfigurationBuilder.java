@@ -84,9 +84,9 @@ public class ManagementConfigurationBuilder {
         }
         mode = processing.getAttribute(new QName(ConfigurationConstants.PROCESSING_MODE_ATTRIBUTE))
                 .getAttributeValue();
-        if (mode.equals(ConfigurationConstants.PROCESSING_MODE_HA)) {
+        if (mode.equalsIgnoreCase(ConfigurationConstants.PROCESSING_MODE_HA)) {
             return haConfig(processing);
-        } else if (mode.equals(ConfigurationConstants.PROCESSING_MODE_SN)) {
+        } else if (mode.equalsIgnoreCase(ConfigurationConstants.PROCESSING_MODE_SN)) {
             return snConfig(processing);
         }
         return null;
@@ -111,13 +111,13 @@ public class ManagementConfigurationBuilder {
                 new QName(ConfigurationConstants.SN_PERSISTENCE_CLASS_ATTRIBUTE)).getAttributeValue();
         singleNodeConfiguration.setPersistenceClass(className);
     }
-
+/*
     private static HAConfiguration distributedConfig(OMElement processing) {
         isReceiver = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_RECEIVER_ELEMENT, nodeConfig);
         isPublisher = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_PUBLISHER_ELEMENT, nodeConfig);
         isManager = nodeType(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_MANAGER_ELEMENT, nodeConfig);
     }
-
+*/
     private Boolean nodeType(String elementName, OMElement element) throws ManagementConfigurationException {
         element = element.getFirstChildWithName(new QName(elementName));
         if (element != null) {

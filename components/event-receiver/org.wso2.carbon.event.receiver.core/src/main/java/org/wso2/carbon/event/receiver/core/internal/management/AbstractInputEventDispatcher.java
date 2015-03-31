@@ -24,7 +24,6 @@ public abstract class AbstractInputEventDispatcher {
 
     protected boolean drop = false;
     protected boolean sendToOther = false;
-    protected String streamId;
 
     protected EventProducerCallback callBack;
 
@@ -58,13 +57,5 @@ public abstract class AbstractInputEventDispatcher {
 
     public void setSendToOther(boolean sendToOther) {
         this.sendToOther = sendToOther;
-    }
-
-    public String getStreamId() {
-        return streamId;
-    }
-
-    public void setStreamId(String streamId) {
-        this.streamId = streamId;
     }
 }

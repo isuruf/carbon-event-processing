@@ -39,6 +39,7 @@ public class CarbonInputAdapterRuntime implements InputEventAdapterListener, Inp
     private String name;
     private InputEventAdapterSubscription inputEventAdapterSubscription;
     private volatile boolean connected = false;
+    private static boolean startPolling = false;
     private boolean start = false;
     private DecayTimer timer = new DecayTimer();
     private volatile long nextConnectionTime;
@@ -57,8 +58,7 @@ public class CarbonInputAdapterRuntime implements InputEventAdapterListener, Inp
     }
 
     public void startPolling() {
-        if (!connected && start && isPolling() &&
-                InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService().isStartPolling()) {
+        if (!connected && start && isPolling()) {
             start();
         }
     }
@@ -67,10 +67,15 @@ public class CarbonInputAdapterRuntime implements InputEventAdapterListener, Inp
     public void start() {
         try {
             start = true;
-            if (!connected && (!isPolling()
-                    || InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService().isStartPolling())) {
-                inputEventAdapter.connect();
-                connected = true;
+            if (!isPolling() ||
+                    InputEventAdapterServiceValueHolder.getCarbonInputEventAdapterService().isStartPolling()) {
+                if (!connected) {
+                    log.info("Connecting receiver "+this.name);
+                    inputEventAdapter.connect();
+                    connected = true;
+                }
+            } else {
+                log.info("Waiting to connect receiver "+this.name);
             }
         } catch (ConnectionUnavailableException e) {
             connectionUnavailable(e);

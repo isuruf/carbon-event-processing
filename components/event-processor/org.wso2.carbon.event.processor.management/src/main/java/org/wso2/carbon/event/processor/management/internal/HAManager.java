@@ -20,11 +20,12 @@ package org.wso2.carbon.event.processor.management.internal;
 import com.hazelcast.core.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.event.processor.common.util.ByteSerializer;
+import org.wso2.carbon.event.processor.management.EventProcessingManager;
 import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
-import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagementValueHolder;
+import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagerValueHolder;
 import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceClientThriftImpl;
 import org.wso2.carbon.event.processor.management.internal.util.Constants;
-import org.wso2.carbon.event.receiver.core.internal.management.ByteSerializer;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
@@ -61,9 +62,8 @@ public class HAManager {
         passiveId = Constants.PASSIVEID;
         activeLock = hazelcastInstance.getLock(activeId);
         passiveLock = hazelcastInstance.getLock(passiveId);
+        members.set(haConfiguration, true);
 
-        members = hazelcastInstance.getMap(Constants.MEMBERS);
-        members.put(haConfiguration, true);
         this.eventProcessingManager = eventProcessingManager;
 
         hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
@@ -124,16 +124,18 @@ public class HAManager {
     }
 
     private void becomePassive() {
-        roleToMembershipMap.put(passiveId, haConfiguration);
+        roleToMembershipMap.set(passiveId, haConfiguration);
 
 
         HAConfiguration activeMember = roleToMembershipMap.get(activeId);
+        HAConfiguration passiveMember = roleToMembershipMap.get(passiveId);
         // Send non-duplicate events to active member
+        eventProcessingManager.getEventReceiverManagementService().startServer(passiveMember.getTransport());
         eventProcessingManager.getEventReceiverManagementService().setOtherMember(activeMember.getTransport());
-        eventProcessingManager.getEventReceiverManagementService().start();
 
         eventProcessingManager.getEventReceiverManagementService().pause();
         eventProcessingManager.getEventProcessorManagementService().pause();
+        eventProcessingManager.getEventPublisherManagementService().setDrop(true);
         ManagementServiceClient client = new ManagementServiceClientThriftImpl();
         byte[] state = client.getSnapshot(activeMember.getManagement());
         ArrayList<byte[]> stateList = (ArrayList<byte[]>) ByteSerializer.BToO(state);
@@ -149,7 +151,12 @@ public class HAManager {
     }
 
     private void becomeActive() {
-        EventProcessingManager eventProcessingManager = EventProcessingManagementValueHolder.getEventProcessingManager();
+        EventProcessingManager eventProcessingManager = EventProcessingManagerValueHolder.getEventProcessingManager();
+
+        roleToMembershipMap.set(activeId, haConfiguration);
+        eventProcessingManager.getEventReceiverManagementService().startServer(haConfiguration.getTransport());
+
+        eventProcessingManager.getEventPublisherManagementService().setDrop(false);
         eventProcessingManager.getEventReceiverManagementService().start();
     }
 

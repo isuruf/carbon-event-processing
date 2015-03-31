@@ -25,8 +25,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
-import org.wso2.carbon.event.processor.management.internal.EventProcessingManager;
+import org.wso2.carbon.event.processor.management.EventProcessingManager;
+import org.wso2.carbon.event.publisher.core.EventPublisherManagementService;
 import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
+import org.wso2.carbon.utils.ConfigurationContextService;
 
 /**
  * @scr.component name="eventProcessorManagementService.component" immediate="true"
@@ -38,18 +40,23 @@ import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
  * policy="dynamic" bind="setEventProcessorManagementService" unbind="unSetEventProcessorManagementService"
  * @scr.reference name="event.eventreceivermanagementservice.service"
  * interface="org.wso2.carbon.event.receiver.core.EventReceiverManagementService" cardinality="1..1"
- * policy="dynamic" bind="setEventReceiverManagementService" unbind="unEventReceiverManagementServicee"
+ * policy="dynamic" bind="setEventReceiverManagementService" unbind="unSetEventReceiverManagementService"
+ * @scr.reference name="event.eventpublishermanagementservice.service"
+ * interface="org.wso2.carbon.event.publisher.core.EventPublisherManagementService" cardinality="1..1"
+ * policy="dynamic" bind="setEventPublisherManagementService" unbind="unSetEventPublisherManagementService"
+ * @scr.reference name="configuration.contextService.service"
+ * interface="org.wso2.carbon.utils.ConfigurationContextService" cardinality="0..1"
+ * policy="dynamic" bind="setConfigurationContextService" unbind="unsetConfigurationContextService"
  */
 
-public class EventProcessingManagementServiceDS {
-    private static final Log log = LogFactory.getLog(EventProcessingManagementServiceDS.class);
+public class EventProcessingManagerServiceDS {
+    private static final Log log = LogFactory.getLog(EventProcessingManagerServiceDS.class);
 
     protected void activate(ComponentContext context) {
         try {
 
             EventProcessingManager eventProcessingManager = new EventProcessingManager();
-            EventProcessingManagementValueHolder.setEventProcessingManager(eventProcessingManager);
-            //context.getBundleContext().registerService(EventProcessingManagement.class.getName(), eventProcessingManagement, null);
+            EventProcessingManagerValueHolder.setEventProcessingManager(eventProcessingManager);
 
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed EventProcessorManagementService");
@@ -62,11 +69,11 @@ public class EventProcessingManagementServiceDS {
     }
 
     protected void deactivate(ComponentContext context) {
-        EventProcessingManagementValueHolder.getEventProcessingManager().shutdown();
+        EventProcessingManagerValueHolder.getEventProcessingManager().shutdown();
     }
 
     protected void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        EventProcessingManagementValueHolder.registerHazelcastInstance(hazelcastInstance);
+        EventProcessingManagerValueHolder.registerHazelcastInstance(hazelcastInstance);
 
         hazelcastInstance.getCluster().addMembershipListener(new MembershipListener() {
             @Override
@@ -85,26 +92,43 @@ public class EventProcessingManagementServiceDS {
             }
 
         });
-        EventProcessingManagementValueHolder.getEventProcessingManager().init(hazelcastInstance);
+        EventProcessingManagerValueHolder.getEventProcessingManager().init(hazelcastInstance);
     }
 
     protected void unsetHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        EventProcessingManagementValueHolder.registerHazelcastInstance(null);
+        EventProcessingManagerValueHolder.registerHazelcastInstance(null);
     }
 
     public void setEventProcessorManagementService(EventProcessorManagementService eventProcessorManagementService) {
-        EventProcessingManagementValueHolder.registerEventProcessorManagementService(eventProcessorManagementService);
+        EventProcessingManagerValueHolder.registerEventProcessorManagementService(eventProcessorManagementService);
     }
 
     public void unSetEventProcessorManagementService(EventProcessorManagementService eventProcessorManagementService) {
-        EventProcessingManagementValueHolder.registerEventProcessorManagementService(null);
+        EventProcessingManagerValueHolder.registerEventProcessorManagementService(null);
     }
 
     public void setEventReceiverManagementService(EventReceiverManagementService eventReceiverManagementService) {
-        EventProcessingManagementValueHolder.registerEventReceiverManagementService(eventReceiverManagementService);
+        EventProcessingManagerValueHolder.registerEventReceiverManagementService(eventReceiverManagementService);
     }
 
     public void unSetEventReceiverManagementService(EventReceiverManagementService eventReceiverManagementService) {
-        EventProcessingManagementValueHolder.registerEventReceiverManagementService(null);
+        EventProcessingManagerValueHolder.registerEventReceiverManagementService(null);
+    }
+
+    public void setEventPublisherManagementService(EventPublisherManagementService eventPublisherManagementService) {
+        EventProcessingManagerValueHolder.registerEventPublisherManagementService(eventPublisherManagementService);
+    }
+
+    public void unSetEventPublisherManagementService(EventPublisherManagementService eventPublisherManagementService) {
+        EventProcessingManagerValueHolder.registerEventPublisherManagementService(null);
+    }
+
+    protected void setConfigurationContextService(
+            ConfigurationContextService configurationContextService) {
+        EventProcessingManagerValueHolder.getEventProcessingManager().init(configurationContextService);
+    }
+
+    protected void unsetConfigurationContextService(
+            ConfigurationContextService configurationContextService) {
     }
 }
