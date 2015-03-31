@@ -62,6 +62,8 @@ public class HAManager {
         passiveId = Constants.PASSIVEID;
         activeLock = hazelcastInstance.getLock(activeId);
         passiveLock = hazelcastInstance.getLock(passiveId);
+
+        members = hazelcastInstance.getMap(Constants.MEMBERS);
         members.set(haConfiguration, true);
 
         this.eventProcessingManager = eventProcessingManager;
