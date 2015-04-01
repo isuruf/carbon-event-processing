@@ -88,4 +88,14 @@ public class WebsocketEventAdapter implements InputEventAdapter {
             client.shutdown();
         }
     }
+
+    @Override
+    public boolean isEventDuplicatedInCluster() {
+        return false;
+    }
+
+    @Override
+    public boolean isPolling() {
+        return false;
+    }
 }

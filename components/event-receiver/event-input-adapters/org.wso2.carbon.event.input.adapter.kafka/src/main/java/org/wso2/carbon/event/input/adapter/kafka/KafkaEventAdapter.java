@@ -144,4 +144,14 @@ public final class KafkaEventAdapter implements InputEventAdapter {
         tenantSpecificConsumerMap.put(subscriptionId, consumerAdaptor);
         consumerAdaptor.run(threads, inputEventAdapterListener);
     }
+
+    @Override
+    public boolean isEventDuplicatedInCluster() {
+        return false;
+    }
+
+    @Override
+    public boolean isPolling() {
+        return false;
+    }
 }

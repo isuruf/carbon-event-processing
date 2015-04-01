@@ -20,8 +20,10 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterFactory;
 import org.wso2.carbon.event.input.adapter.core.InputEventAdapterService;
 import org.wso2.carbon.event.receiver.core.EventReceiverService;
+import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.exception.EventReceiverConfigurationException;
 import org.wso2.carbon.event.receiver.core.internal.CarbonEventReceiverService;
+import org.wso2.carbon.event.receiver.core.internal.CarbonEventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.internal.EventStreamListenerImpl;
 import org.wso2.carbon.event.statistics.EventStatisticsService;
 import org.wso2.carbon.event.stream.core.EventStreamListener;
@@ -63,16 +65,27 @@ public class EventReceiverServiceDS {
         try {
             CarbonEventReceiverService carbonEventReceiverService = new CarbonEventReceiverService();
             EventReceiverServiceValueHolder.registerEventReceiverService(carbonEventReceiverService);
+
+            CarbonEventReceiverManagementService eventReceiverManagementService = new CarbonEventReceiverManagementService();
+            EventReceiverServiceValueHolder.setCarbonEventReceiverManagementService(eventReceiverManagementService);
+
             context.getBundleContext().registerService(EventReceiverService.class.getName(), carbonEventReceiverService, null);
+            context.getBundleContext().registerService(EventReceiverManagementService.class.getName(), eventReceiverManagementService, null);
+
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed EventReceiverService.");
             }
 
             activateInactiveEventReceiverConfigurations(carbonEventReceiverService);
             context.getBundleContext().registerService(EventStreamListener.class.getName(), new EventStreamListenerImpl(), null);
+
         } catch (RuntimeException e) {
             log.error("Could not create EventReceiverService or EventReceiver : " + e.getMessage(), e);
         }
+    }
+
+    protected void deactivate(ComponentContext context) {
+        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().shutdown();
     }
 
     private void activateInactiveEventReceiverConfigurations(CarbonEventReceiverService carbonEventReceiverService) {
