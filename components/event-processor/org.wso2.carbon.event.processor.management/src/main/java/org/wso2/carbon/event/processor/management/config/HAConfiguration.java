@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.wso2.carbon.event.processor.management.internal.config;
+package org.wso2.carbon.event.processor.management.config;
 
 import org.wso2.carbon.event.processor.common.config.Mode;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;

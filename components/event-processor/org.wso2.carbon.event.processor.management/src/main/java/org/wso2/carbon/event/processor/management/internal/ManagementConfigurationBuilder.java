@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal.config;
+package org.wso2.carbon.event.processor.management.internal;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
@@ -25,6 +25,9 @@ import org.apache.log4j.Logger;
 import org.wso2.carbon.event.processor.common.config.ConfigurationConstants;
 import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
 import org.wso2.carbon.event.processor.common.util.Utils;
+import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.config.HAConfiguration;
+import org.wso2.carbon.event.processor.management.config.SingleNodeConfiguration;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ServerConstants;
 

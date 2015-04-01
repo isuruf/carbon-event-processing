@@ -19,6 +19,7 @@
 package org.wso2.carbon.event.receiver.core.internal.management;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
 
@@ -37,6 +38,8 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
 
     public QueueInputEventDispatcher(int tenantId, String eventReceiverName, Lock readLock) {
         this.readLock = readLock;
+        this.tenantId = tenantId;
+        this.eventReceiverName = eventReceiverName;
         executorService.submit(new QueueInputEventDispatcherWorker());
     }
 
@@ -90,20 +93,31 @@ public class QueueInputEventDispatcher extends AbstractInputEventDispatcher {
          */
         @Override
         public void run() {
-            while (true) {
-                try {
-                    readLock.lock();
-                    Object[] event = eventQueue.take();
-                    readLock.unlock();
-                    if(!isDrop()) {
-                        callBack.sendEventData(event);
+            try {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
+                while (true) {
+                    try {
+                        readLock.lock();
+                        readLock.unlock();
+                        Object[] event = eventQueue.take();
+                        readLock.lock();
+                        readLock.unlock();
+                        if (!isDrop()) {
+                            callBack.sendEventData(event);
+                        }
+                        if (isSendToOther()) {
+                            EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().sendToOther(tenantId, eventReceiverName, event);
+                        }
+                    } catch (InterruptedException e) {
+                        log.error("Interrupted while waiting to get an event from queue.", e);
                     }
-                    if(isSendToOther()) {
-                        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().sendToOther(tenantId, eventReceiverName, event);
-                    }
-                } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting to get an event from queue.", e);
                 }
+            } catch (Exception e){
+                log.error("Error in dispatching events.");
+            } finally {
+                PrivilegedCarbonContext.endTenantFlow();
             }
         }
     }

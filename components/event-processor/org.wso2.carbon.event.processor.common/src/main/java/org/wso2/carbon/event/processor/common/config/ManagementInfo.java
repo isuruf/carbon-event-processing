@@ -84,11 +84,11 @@ public class ManagementInfo {
         }
         attribute = processing.getAttribute(new QName(ConfigurationConstants.PROCESSING_MODE_ATTRIBUTE))
                 .getAttributeValue();
-        if (attribute.equals(ConfigurationConstants.PROCESSING_MODE_HA)) {
+        if (attribute.equalsIgnoreCase(ConfigurationConstants.PROCESSING_MODE_HA)) {
             mode = Mode.HA;
-        } else if (attribute.equals(ConfigurationConstants.PROCESSING_MODE_SN)) {
+        } else if (attribute.equalsIgnoreCase(ConfigurationConstants.PROCESSING_MODE_SN)) {
             mode = Mode.SingleNode;
-        } else if (attribute.equals(ConfigurationConstants.PROCESSING_MODE_DISTRIBUTED)) {
+        } else if (attribute.equalsIgnoreCase(ConfigurationConstants.PROCESSING_MODE_DISTRIBUTED)) {
             mode = Mode.Distributed;
             OMElement nodeConfig = omElement.getFirstChildWithName(
                     new QName(ConfigurationConstants.DISTRIBUTED_NODE_CONFIG_ELEMENT));

@@ -26,8 +26,8 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
 import org.wso2.carbon.event.processor.common.config.Mode;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;
-import org.wso2.carbon.event.processor.management.internal.config.EventProcessingManagementConfiguration;
-import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
+import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.config.HAConfiguration;
 import org.wso2.carbon.event.processor.management.internal.thrift.ManagementServiceImpl;
 import org.wso2.carbon.event.processor.management.internal.thrift.service.ManagementService;
 

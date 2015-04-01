@@ -19,6 +19,7 @@
 package org.wso2.carbon.event.receiver.core.internal;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.databridge.commons.StreamDefinition;
 import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
 import org.wso2.carbon.event.processor.common.config.ManagementInfo;
 import org.wso2.carbon.event.processor.common.transport.client.TCPEventPublisher;
@@ -29,6 +30,7 @@ import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
+import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -127,9 +129,10 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
     public void sendToOther(int tenantId, String eventReceiverName, Object[] data) {
         if (tcpEventPublisher != null) {
             try {
-                tcpEventPublisher.sendEvent(tenantId + "/" + eventReceiverName, data, true);
-            } catch (IOException e) {
-                //TODO
+                //tcpEventPublisher.sendEvent(tenantId + "/" + eventReceiverName, data, true);
+                tcpEventPublisher.sendEvent(eventReceiverName, data, true);
+            } catch (Throwable e) {
+                log.error(e);
             }
         }
     }
@@ -142,7 +145,7 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
             tcpEventServer = new TCPEventServer(tcpEventServerConfig, new StreamCallback() {
                 @Override
                 public void receive(String streamId, Object[] event) {
-                    int index = streamId.indexOf("/");
+                    /*int index = streamId.indexOf("/");
                     if (index != -1) {
                         int tenantId = Integer.parseInt(streamId.substring(0, index));
                         String eventReceiverName = streamId.substring(index + 1);
@@ -151,7 +154,13 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
                         getReadLock().lock();
                         getReadLock().unlock();
                         eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
-                    }
+                    }*/
+                    EventReceiver eventReceiver =
+                            EventReceiverServiceValueHolder.getCarbonEventReceiverService().getEventReceiver(-1234, streamId);
+                    getReadLock().lock();
+                    getReadLock().unlock();
+                    eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
+
                 }
             });
             tcpEventServer.start();

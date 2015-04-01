@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal.config;
+package org.wso2.carbon.event.processor.management.config;
 
 
 import org.wso2.carbon.event.processor.common.config.Mode;

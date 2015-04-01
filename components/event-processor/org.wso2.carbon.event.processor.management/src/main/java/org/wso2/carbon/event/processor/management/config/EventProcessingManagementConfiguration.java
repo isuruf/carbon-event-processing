@@ -16,10 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.event.processor.management.internal.config;
+package org.wso2.carbon.event.processor.management.config;
 
-/**
- * Created by isuru on 3/28/15.
- */
-public class DistributedConfiguration {
+import org.wso2.carbon.event.processor.common.config.Mode;
+
+public interface EventProcessingManagementConfiguration {
+    public Mode getMode();
 }

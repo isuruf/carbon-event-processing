@@ -24,9 +24,9 @@ import org.wso2.carbon.event.processor.common.config.ManagementConfigurationExce
 import org.wso2.carbon.event.processor.common.config.Mode;
 import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.management.internal.HAManager;
-import org.wso2.carbon.event.processor.management.internal.config.EventProcessingManagementConfiguration;
-import org.wso2.carbon.event.processor.management.internal.config.HAConfiguration;
-import org.wso2.carbon.event.processor.management.internal.config.ManagementConfigurationBuilder;
+import org.wso2.carbon.event.processor.management.config.EventProcessingManagementConfiguration;
+import org.wso2.carbon.event.processor.management.config.HAConfiguration;
+import org.wso2.carbon.event.processor.management.internal.ManagementConfigurationBuilder;
 import org.wso2.carbon.event.processor.management.internal.ds.EventProcessingManagerValueHolder;
 import org.wso2.carbon.event.processor.management.internal.util.Constants;
 import org.wso2.carbon.event.publisher.core.EventPublisherManagementService;
