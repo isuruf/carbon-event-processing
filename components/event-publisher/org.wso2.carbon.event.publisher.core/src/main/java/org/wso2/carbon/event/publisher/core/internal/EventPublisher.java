@@ -54,6 +54,8 @@ public class EventPublisher implements RawEventConsumer {
     private boolean dynamicMessagePropertyEnabled = false;
     private boolean customMappingEnabled = false;
 
+    public static volatile boolean isDrop = false;
+
     public EventPublisher(EventPublisherConfiguration eventPublisherConfiguration)
             throws EventPublisherConfigurationException {
 
@@ -121,6 +123,10 @@ public class EventPublisher implements RawEventConsumer {
     }
 
     public void sendEventData(Object[] eventData) {
+
+        if (isDrop) {
+            return;
+        }
 
         Map<String, String> dynamicProperties = new HashMap<String, String>(eventPublisherConfiguration.getToAdapterDynamicProperties());
 
