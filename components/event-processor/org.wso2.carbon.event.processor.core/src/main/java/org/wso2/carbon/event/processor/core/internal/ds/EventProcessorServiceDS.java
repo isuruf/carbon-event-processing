@@ -27,9 +27,10 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.base.api.ServerConfigurationService;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfigReader;
+import org.wso2.carbon.event.processor.core.EventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.EventProcessorService;
+import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorManagementService;
 import org.wso2.carbon.event.processor.core.internal.CarbonEventProcessorService;
-import org.wso2.carbon.event.processor.core.internal.ha.server.HAManagementServer;
 import org.wso2.carbon.event.processor.core.internal.listener.EventStreamListenerImpl;
 import org.wso2.carbon.event.processor.core.internal.persistence.FileSystemPersistenceStore;
 import org.wso2.carbon.event.processor.core.internal.storm.manager.StormManagerServer;
@@ -78,8 +79,6 @@ public class EventProcessorServiceDS {
             CarbonEventProcessorService carbonEventProcessorService = new CarbonEventProcessorService();
             EventProcessorValueHolder.registerEventProcessorService(carbonEventProcessorService);
 
-            new HAManagementServer(carbonEventProcessorService);
-
             String stormConfigDirPath = CarbonUtils.getCarbonConfigDirPath();
             StormDeploymentConfig stormDeploymentConfig = StormDeploymentConfigReader.loadConfigurations(stormConfigDirPath);
             if (stormDeploymentConfig != null) {
@@ -89,10 +88,12 @@ public class EventProcessorServiceDS {
                     EventProcessorValueHolder.registerStormManagerServer(stormManagerServer);
                 }
             }
-
-
+            CarbonEventProcessorManagementService carbonEventProcessorManagementService = new CarbonEventProcessorManagementService();
+            EventProcessorValueHolder.registerEventProcessorManagementService(carbonEventProcessorManagementService);
 
             context.getBundleContext().registerService(EventProcessorService.class.getName(), carbonEventProcessorService, null);
+            context.getBundleContext().registerService(EventProcessorManagementService.class.getName(), carbonEventProcessorManagementService, null);
+
             context.getBundleContext().registerService(EventStreamListener.class.getName(), new EventStreamListenerImpl(), null);
 
             SiddhiManager siddhiManager = new SiddhiManager();

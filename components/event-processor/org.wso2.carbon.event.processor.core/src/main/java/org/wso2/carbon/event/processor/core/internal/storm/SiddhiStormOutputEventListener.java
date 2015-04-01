@@ -23,6 +23,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.wso2.carbon.databridge.commons.thrift.utils.HostAddressFinder;
+import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.processor.core.ExecutionPlanConfiguration;
 import org.wso2.carbon.event.processor.core.internal.listener.SiddhiOutputStreamListener;
 import org.wso2.carbon.event.processor.common.storm.config.StormDeploymentConfig;
@@ -170,7 +171,7 @@ public class SiddhiStormOutputEventListener implements StreamCallback {
 
         private boolean registerCEPPublisherWithStormMangerService() {
             TTransport transport = null;
-            for(StormDeploymentConfig.HostAndPort endpoint:stormDeploymentConfig.getManagers()) {
+            for(HostAndPort endpoint:stormDeploymentConfig.getManagers()) {
                 try {
                     transport = new TSocket(endpoint.getHostName(), endpoint.getPort());
                     TProtocol protocol = new TBinaryProtocol(transport);

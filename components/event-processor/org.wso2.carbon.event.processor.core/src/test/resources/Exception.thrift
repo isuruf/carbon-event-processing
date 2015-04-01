@@ -16,7 +16,7 @@
 * under the License.
 */
 
-namespace java org.wso2.carbon.event.processor.core.internal.ha.thrift.exception
+namespace java org.wso2.carbon.event.processor.management.internal.thrift.exception
 
 exception NotAnActiveMemberException {
     1: required string message
