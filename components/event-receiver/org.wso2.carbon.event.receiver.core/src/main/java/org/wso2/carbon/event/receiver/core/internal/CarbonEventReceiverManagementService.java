@@ -19,6 +19,8 @@
 package org.wso2.carbon.event.receiver.core.internal;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.databridge.commons.Attribute;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
 import org.wso2.carbon.event.processor.common.config.ManagementConfigurationException;
 import org.wso2.carbon.event.processor.common.config.ManagementInfo;
@@ -30,10 +32,11 @@ import org.wso2.carbon.event.processor.common.util.ByteSerializer;
 import org.wso2.carbon.event.processor.common.util.HostAndPort;
 import org.wso2.carbon.event.receiver.core.EventReceiverManagementService;
 import org.wso2.carbon.event.receiver.core.internal.ds.EventReceiverServiceValueHolder;
-import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -119,6 +122,15 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
             try {
                 tcpEventPublisher = new TCPEventPublisher(otherMember.getHostName() + ":" + otherMember.getPort(),
                         false);
+                Map<Integer, Map<String, EventReceiver>> map = EventReceiverServiceValueHolder.getCarbonEventReceiverService().getTenantSpecificEventReceiverMap();
+                for (Map.Entry<Integer, Map<String, EventReceiver>> tenantEntry : map.entrySet()) {
+                    int tenantId = tenantEntry.getKey();
+                    for (Map.Entry<String, EventReceiver> receiverEntry : tenantEntry.getValue().entrySet()) {
+                        String receiverName = receiverEntry.getKey();
+                        addToPublisherAndServer(tenantId, receiverName, receiverEntry.getValue().getExportedStreamDefinition());
+                    }
+                }
+
             } catch (IOException e) {
                 //TODO
             }
@@ -126,11 +138,37 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
         this.otherMember = otherMember;
     }
 
+    public void addToPublisherAndServer(int tenantId, String receiverName, StreamDefinition dataBridgeStreamDefinition) {
+
+        org.wso2.siddhi.query.api.definition.StreamDefinition streamDefinition = new org.wso2.siddhi.query.api.definition.StreamDefinition();
+        streamDefinition.setId(tenantId + "/" + receiverName);
+
+        List<Attribute> attributes = new ArrayList<Attribute>();
+        if(dataBridgeStreamDefinition.getMetaData() != null) {
+            attributes.addAll(dataBridgeStreamDefinition.getMetaData());
+        }
+        if(dataBridgeStreamDefinition.getCorrelationData() != null) {
+            attributes.addAll(dataBridgeStreamDefinition.getCorrelationData());
+        }
+        if(dataBridgeStreamDefinition.getPayloadData() != null) {
+            attributes.addAll(dataBridgeStreamDefinition.getPayloadData());
+        }
+        for (Attribute attr : attributes) {
+            streamDefinition.attribute(attr.getName(), org.wso2.siddhi.query.api.definition.Attribute.Type.valueOf(attr.getType().toString()));
+        }
+
+        if (tcpEventPublisher != null) {
+            tcpEventPublisher.addStreamDefinition(streamDefinition);
+        }
+        if (tcpEventServer != null) {
+            tcpEventServer.subscribe(streamDefinition);
+        }
+    }
+
     public void sendToOther(int tenantId, String eventReceiverName, Object[] data) {
         if (tcpEventPublisher != null) {
             try {
-                //tcpEventPublisher.sendEvent(tenantId + "/" + eventReceiverName, data, true);
-                tcpEventPublisher.sendEvent(eventReceiverName, data, true);
+                tcpEventPublisher.sendEvent(tenantId + "/" + eventReceiverName, data, true);
             } catch (Throwable e) {
                 log.error(e);
             }
@@ -145,24 +183,35 @@ public class CarbonEventReceiverManagementService implements EventReceiverManage
             tcpEventServer = new TCPEventServer(tcpEventServerConfig, new StreamCallback() {
                 @Override
                 public void receive(String streamId, Object[] event) {
-                    /*int index = streamId.indexOf("/");
+                    int index = streamId.indexOf("/");
+                    String eventReceiverName = streamId.substring(index + 1);
                     if (index != -1) {
                         int tenantId = Integer.parseInt(streamId.substring(0, index));
-                        String eventReceiverName = streamId.substring(index + 1);
-                        EventReceiver eventReceiver =
-                                EventReceiverServiceValueHolder.getCarbonEventReceiverService().getEventReceiver(tenantId, eventReceiverName);
-                        getReadLock().lock();
-                        getReadLock().unlock();
-                        eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
-                    }*/
-                    EventReceiver eventReceiver =
-                            EventReceiverServiceValueHolder.getCarbonEventReceiverService().getEventReceiver(-1234, streamId);
-                    getReadLock().lock();
-                    getReadLock().unlock();
-                    eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
-
+                        try {
+                            PrivilegedCarbonContext.startTenantFlow();
+                            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
+                            PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(true);
+                            EventReceiver eventReceiver =
+                                    EventReceiverServiceValueHolder.getCarbonEventReceiverService().getEventReceiver(tenantId, eventReceiverName);
+                            getReadLock().lock();
+                            getReadLock().unlock();
+                            eventReceiver.getInputEventDispatcher().getCallBack().sendEventData(event);
+                        } catch (Exception e) {
+                            log.error("Unable to start event adpaters for tenant :" + tenantId, e);
+                        } finally {
+                            PrivilegedCarbonContext.endTenantFlow();
+                        }
+                    }
                 }
             });
+            Map<Integer, Map<String, EventReceiver>> map = EventReceiverServiceValueHolder.getCarbonEventReceiverService().getTenantSpecificEventReceiverMap();
+            for (Map.Entry<Integer, Map<String, EventReceiver>> tenantEntry : map.entrySet()) {
+                int tenantId = tenantEntry.getKey();
+                for (Map.Entry<String, EventReceiver> receiverEntry : tenantEntry.getValue().entrySet()) {
+                    String receiverName = receiverEntry.getKey();
+                    addToPublisherAndServer(tenantId, receiverName, receiverEntry.getValue().getExportedStreamDefinition());
+                }
+            }
             tcpEventServer.start();
             log.info("CEP Management TCPEventServer for EventReceiver started on port " + member.getPort());
         }

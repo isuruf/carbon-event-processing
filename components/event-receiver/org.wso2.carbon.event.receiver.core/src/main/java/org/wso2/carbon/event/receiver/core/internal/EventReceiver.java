@@ -62,7 +62,7 @@ public class EventReceiver implements EventProducer {
 
     public EventReceiver(EventReceiverConfiguration eventReceiverConfiguration,
                          StreamDefinition exportedStreamDefinition, Mode mode,
-                         boolean started, boolean startedPolling)
+                         boolean started)
             throws EventReceiverConfigurationException {
         this.eventReceiverConfiguration = eventReceiverConfiguration;
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();

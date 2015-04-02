@@ -53,7 +53,6 @@ public class CarbonEventReceiverService implements EventReceiverService {
     private Map<Integer, Map<String, EventReceiver>> tenantSpecificEventReceiverMap;
     private Map<Integer, List<EventReceiverConfigurationFile>> tenantSpecificEventReceiverConfigurationFileMap;
     private boolean started = false;
-    private boolean startedPolling = false;
 
     private ManagementInfo managementInfo;
 
@@ -326,7 +325,10 @@ public class CarbonEventReceiverService implements EventReceiverService {
 
         // End; Checking preconditions to add the event receiver
         EventReceiver eventReceiver = new EventReceiver(eventReceiverConfiguration, exportedStreamDefinition,
-                managementInfo.getMode(), started, startedPolling);
+                managementInfo.getMode(), started);
+
+        EventReceiverServiceValueHolder.getCarbonEventReceiverManagementService().addToPublisherAndServer(
+                tenantId, eventReceiverConfiguration.getEventReceiverName(), exportedStreamDefinition);
 
         try {
             EventReceiverServiceValueHolder.getEventStreamService().subscribe(eventReceiver);
@@ -650,6 +652,8 @@ public class CarbonEventReceiverService implements EventReceiverService {
         }
         return null;
     }
+
+
 
     //
 //    public void removeEventReceiver(String eventReceiverName,
